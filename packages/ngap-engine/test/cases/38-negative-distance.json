@@ -1,0 +1,1 @@
+{"id":"NGAP-038","description":"Une distance négative est rejetée à l'entrée","input":{"travel":{"fromCabinetKm":-1}},"expected":{"errorCode":"INVALID_CONTEXT"}}

@@ -1,0 +1,1 @@
+{"id":"NGAP-010","description":"Un soin à domicile ajoute l'IFD","input":{"visit":{"isHomeVisit":true}},"expected":{"totalCents":911}}

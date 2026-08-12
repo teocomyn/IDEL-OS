@@ -1,0 +1,1 @@
+{"id":"NGAP-026","description":"Un acte inconnu bloque la proposition","input":{"acts":[{"catalogId":"acte-inconnu","quantity":1,"tags":[]}]},"expected":{"totalCents":0,"alertCodes":["UNKNOWN_CATALOG_ACT"]}}

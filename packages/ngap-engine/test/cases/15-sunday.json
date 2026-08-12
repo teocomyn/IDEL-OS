@@ -1,0 +1,1 @@
+{"id":"NGAP-015","description":"Le dimanche ajoute une seule majoration","input":{"visit":{"isSunday":true}},"expected":{"totalCents":1486}}

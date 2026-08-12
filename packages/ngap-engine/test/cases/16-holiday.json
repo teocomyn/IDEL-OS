@@ -1,0 +1,1 @@
+{"id":"NGAP-016","description":"Un jour férié ajoute une seule majoration","input":{"visit":{"isHoliday":true}},"expected":{"totalCents":1486}}

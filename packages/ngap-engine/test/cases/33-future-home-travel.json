@@ -1,0 +1,1 @@
+{"id":"NGAP-033","description":"Les tarifs datés et le déplacement se composent","input":{"date":"2026-11-06T08:00:00.000Z","visit":{"isHomeVisit":true},"travel":{"fromCabinetKm":3}},"expected":{"totalCents":1022}}

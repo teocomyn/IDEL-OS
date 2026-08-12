@@ -1,0 +1,1 @@
+{"id":"NGAP-019","description":"La plage 23 heures à 5 heures ajoute 18,30 euros","input":{"visit":{"isNight":true,"nightPeriod":"23-5"}},"expected":{"totalCents":2466}}

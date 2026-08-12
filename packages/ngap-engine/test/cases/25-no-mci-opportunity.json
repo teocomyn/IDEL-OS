@@ -1,0 +1,1 @@
+{"id":"NGAP-025","description":"L'ALD seule ne suffit pas à suggérer la MCI","input":{"patient":{"isALD":true}},"expected":{"totalCents":636,"absentAlertCodes":["MISSING_MCI"]}}

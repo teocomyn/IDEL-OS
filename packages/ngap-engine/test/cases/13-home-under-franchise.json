@@ -1,0 +1,1 @@
+{"id":"NGAP-013","description":"Aucune IK sous la franchise plaine","input":{"visit":{"isHomeVisit":true},"travel":{"fromCabinetKm":1,"zone":"plaine"}},"expected":{"totalCents":911}}

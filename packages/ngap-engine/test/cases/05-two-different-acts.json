@@ -1,0 +1,1 @@
+{"id":"NGAP-005","description":"Le coefficient le plus élevé reste à taux plein","input":{"acts":[{"catalogId":"administration-medicamenteuse","quantity":1,"tags":[]},{"catalogId":"pansement-non-chirurgical","quantity":1,"tags":[]}]},"expected":{"totalCents":825,"lineRates":[1,0.5]}}

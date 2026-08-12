@@ -1,0 +1,1 @@
+{"id":"NGAP-040","description":"Une exception explicite reste à taux plein","input":{"acts":[{"catalogId":"pansement-non-chirurgical","quantity":1,"tags":[]},{"catalogId":"administration-medicamenteuse","quantity":1,"tags":["cumul_full_exempt"]}]},"expected":{"totalCents":1014,"lineRates":[1,1]}}

@@ -1,0 +1,1 @@
+{"id":"NGAP-018","description":"La plage de nuit standard ajoute 9,15 euros","input":{"visit":{"isNight":true,"nightPeriod":"20-23_or_5-8"}},"expected":{"totalCents":1551}}

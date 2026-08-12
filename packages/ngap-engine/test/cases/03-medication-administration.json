@@ -1,0 +1,1 @@
+{"id":"NGAP-003","description":"Une administration médicamenteuse utilise AMI 1,2","input":{"acts":[{"catalogId":"administration-medicamenteuse","quantity":1,"tags":[]}]},"expected":{"totalCents":378,"lineRates":[1]}}

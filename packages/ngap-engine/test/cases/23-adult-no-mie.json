@@ -1,0 +1,1 @@
+{"id":"NGAP-023","description":"Un adulte ne déclenche pas la MIE","input":{"patient":{"age":42}},"expected":{"totalCents":636,"absentAlertCodes":["MIE_APPLIED"]}}

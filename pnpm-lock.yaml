@@ -106,6 +106,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@idel-os/ngap-engine':
+        specifier: workspace:*
+        version: link:../../packages/ngap-engine
       '@idel-os/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -156,7 +159,15 @@ importers:
 
   packages/llm: {}
 
-  packages/ngap-engine: {}
+  packages/ngap-engine:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.1.10
+        version: 4.1.10(vitest@4.1.10)
 
   packages/ocr: {}
 

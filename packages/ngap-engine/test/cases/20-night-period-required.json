@@ -1,0 +1,1 @@
+{"id":"NGAP-020","description":"Une nuit sans plage précise bloque la proposition","input":{"visit":{"isNight":true}},"expected":{"totalCents":636,"alertCodes":["NIGHT_PERIOD_REQUIRED"]}}

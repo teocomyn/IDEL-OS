@@ -1,0 +1,1 @@
+{"id":"NGAP-021","description":"Un enfant de moins de sept ans déclenche la MIE","input":{"patient":{"age":6}},"expected":{"totalCents":951}}

@@ -1,0 +1,1 @@
+{"id":"NGAP-002","description":"Un pansement chirurgical simple utilise AMI 2,02","input":{"acts":[{"catalogId":"pansement-chirurgical-simple","quantity":1,"tags":[]}]},"expected":{"totalCents":636,"lineRates":[1]}}

@@ -1,0 +1,1 @@
+{"id":"NGAP-014","description":"Un acte au cabinet n'ajoute aucun déplacement","input":{"travel":{"fromCabinetKm":12,"zone":"plaine"}},"expected":{"totalCents":636}}

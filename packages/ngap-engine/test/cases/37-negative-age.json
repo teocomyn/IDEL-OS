@@ -1,0 +1,1 @@
+{"id":"NGAP-037","description":"Un âge négatif est rejeté à l'entrée","input":{"patient":{"age":-1}},"expected":{"errorCode":"INVALID_CONTEXT"}}

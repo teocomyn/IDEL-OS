@@ -1,0 +1,1 @@
+{"id":"NGAP-007","description":"L'administration est facturable une seule fois par passage","input":{"acts":[{"catalogId":"administration-medicamenteuse","quantity":2,"tags":[]}]},"expected":{"totalCents":378,"alertCodes":["QUANTITY_CAPPED_PER_VISIT"],"lineRates":[1]}}

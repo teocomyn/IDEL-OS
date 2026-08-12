@@ -1,0 +1,1 @@
+{"id":"NGAP-035","description":"AMI 1,2 suit la valeur de lettre clé à la date du soin","input":{"date":"2026-11-06T08:00:00.000Z","acts":[{"catalogId":"administration-medicamenteuse","quantity":1,"tags":[]}]},"expected":{"totalCents":402}}

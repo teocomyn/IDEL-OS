@@ -1,0 +1,1 @@
+{"id":"NGAP-012","description":"Les IK montagne déduisent un kilomètre à l'aller et au retour","input":{"visit":{"isHomeVisit":true},"travel":{"fromCabinetKm":1.5,"zone":"montagne"}},"expected":{"totalCents":961}}

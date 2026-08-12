@@ -1,0 +1,1 @@
+{"id":"NGAP-009","description":"Deux actes de surveillance de l'article 10 ne se cumulent pas","input":{"acts":[{"catalogId":"administration-medicamenteuse","quantity":1,"tags":[]},{"catalogId":"administration-medicamenteuse","quantity":1,"tags":[]}]},"expected":{"totalCents":378,"alertCodes":["SURVEILLANCE_NOT_CUMULABLE"],"lineRates":[1,0]}}

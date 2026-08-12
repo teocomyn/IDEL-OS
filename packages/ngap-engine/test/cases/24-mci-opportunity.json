@@ -1,0 +1,1 @@
+{"id":"NGAP-024","description":"Un contexte candidat à la MCI crée une opportunité sans l'ajouter","input":{"patient":{"isALD":true},"acts":[{"catalogId":"pansement-non-chirurgical","quantity":1,"tags":["mci_candidate"]}]},"expected":{"totalCents":636,"alertCodes":["MISSING_MCI"]}}

@@ -1,0 +1,1 @@
+{"id":"NGAP-011","description":"Les IK plaine déduisent deux kilomètres à l'aller et au retour","input":{"visit":{"isHomeVisit":true},"travel":{"fromCabinetKm":3,"zone":"plaine"}},"expected":{"totalCents":981}}

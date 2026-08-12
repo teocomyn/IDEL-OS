@@ -1,0 +1,1 @@
+{"id":"NGAP-039","description":"Domicile dimanche et nuit se composent en lignes explicables","input":{"visit":{"isHomeVisit":true,"isSunday":true,"isNight":true,"nightPeriod":"23-5"}},"expected":{"totalCents":3591}}

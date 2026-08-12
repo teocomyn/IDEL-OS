@@ -1,0 +1,1 @@
+{"id":"NGAP-017","description":"Dimanche et jour férié ne doublonnent pas la majoration","input":{"visit":{"isSunday":true,"isHoliday":true}},"expected":{"totalCents":1486}}

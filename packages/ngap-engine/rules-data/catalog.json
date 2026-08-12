@@ -1,0 +1,41 @@
+[
+  {
+    "id": "pansement-non-chirurgical",
+    "label": "Pansement de plaie non chirurgicale",
+    "letterKey": "AMI",
+    "coefficient": 2.02,
+    "tags": ["pansement"],
+    "maxQuantityPerVisit": null,
+    "status": "TO_VERIFY",
+    "active": true,
+    "validFrom": "2026-06-21",
+    "validUntil": null,
+    "source": {"url":"https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000054280866","title":"Décision UNCAM du 2 juin 2026 — article 2","retrievedAt":"2026-08-12","reference":"Article 2, 2°"}
+  },
+  {
+    "id": "pansement-chirurgical-simple",
+    "label": "Pansement de plaie chirurgicale simple",
+    "letterKey": "AMI",
+    "coefficient": 2.02,
+    "tags": ["pansement"],
+    "maxQuantityPerVisit": null,
+    "status": "TO_VERIFY",
+    "active": true,
+    "validFrom": "2026-06-21",
+    "validUntil": null,
+    "source": {"url":"https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000054280866","title":"Décision UNCAM du 2 juin 2026 — article 2","retrievedAt":"2026-08-12","reference":"Article 2, 2°"}
+  },
+  {
+    "id": "administration-medicamenteuse",
+    "label": "Administration et surveillance de la prise médicamenteuse à domicile",
+    "letterKey": "AMI",
+    "coefficient": 1.2,
+    "tags": ["surveillance_article_10"],
+    "maxQuantityPerVisit": 1,
+    "status": "TO_VERIFY",
+    "active": true,
+    "validFrom": "2026-06-21",
+    "validUntil": null,
+    "source": {"url":"https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000054280866","title":"Décision UNCAM du 2 juin 2026 — article 2","retrievedAt":"2026-08-12","reference":"Article 2, 3°"}
+  }
+]

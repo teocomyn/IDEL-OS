@@ -1,0 +1,1 @@
+{"id":"NGAP-008","description":"Plusieurs médicaments ne multiplient pas la ligne facturable","input":{"acts":[{"catalogId":"administration-medicamenteuse","quantity":3,"tags":[]}]},"expected":{"totalCents":378,"alertCodes":["QUANTITY_CAPPED_PER_VISIT"]}}

@@ -1,0 +1,1 @@
+{"id":"NGAP-004","description":"Le deuxième acte est coté à 50 pour cent","input":{"acts":[{"catalogId":"pansement-non-chirurgical","quantity":1,"tags":[]},{"catalogId":"pansement-chirurgical-simple","quantity":1,"tags":[]}]},"expected":{"totalCents":954,"lineRates":[1,0.5]}}

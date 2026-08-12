@@ -1,0 +1,1 @@
+{"id":"NGAP-034","description":"La majoration dimanche se compose avec la valeur AMI datée","input":{"date":"2026-11-06T08:00:00.000Z","visit":{"isSunday":true}},"expected":{"totalCents":1527}}

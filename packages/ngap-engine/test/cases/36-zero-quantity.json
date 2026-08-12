@@ -1,0 +1,1 @@
+{"id":"NGAP-036","description":"Une quantité nulle est rejetée à l'entrée","input":{"acts":[{"catalogId":"pansement-non-chirurgical","quantity":0,"tags":[]}]},"expected":{"errorCode":"INVALID_CONTEXT"}}

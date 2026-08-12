@@ -1,0 +1,1 @@
+{"id":"NGAP-006","description":"Le troisième acte est coté à zéro","input":{"acts":[{"catalogId":"pansement-non-chirurgical","quantity":1,"tags":[]},{"catalogId":"pansement-chirurgical-simple","quantity":1,"tags":[]},{"catalogId":"administration-medicamenteuse","quantity":1,"tags":[]}]},"expected":{"totalCents":954,"lineRates":[1,0.5,0]}}

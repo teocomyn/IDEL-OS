@@ -1,0 +1,1 @@
+{"id":"NGAP-022","description":"À sept ans la MIE ne s'applique plus","input":{"patient":{"age":7}},"expected":{"totalCents":636}}
