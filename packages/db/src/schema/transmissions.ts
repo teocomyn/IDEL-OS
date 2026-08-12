@@ -1,4 +1,4 @@
-import { integer, jsonb, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { visits } from "./care.js";
 import { organizations, users } from "./core.js";
@@ -15,7 +15,7 @@ export const transmissions = pgTable("transmissions", {
   audioUrl: text("audio_url"),
   audioDurationS: integer("audio_duration_s"),
   rawTranscriptEnc: text("raw_transcript_enc"),
-  structuredJson: jsonb("structured_json"),
+  structuredJsonEnc: text("structured_json_enc"),
   finalTextEnc: text("final_text_enc"),
   status: transmissionStatusEnum("status").default("draft").notNull(),
   validatedAt: timestamp("validated_at", { withTimezone: true }),

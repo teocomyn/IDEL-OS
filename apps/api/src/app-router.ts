@@ -5,6 +5,8 @@ import {
   patientInputSchema,
   patientPatchSchema,
   privacyRequestSchema,
+  transmissionDraftInputSchema,
+  transmissionReferenceSchema,
 } from "@idel-os/shared";
 
 import type { AppContext } from "./context/app-context.js";
@@ -66,5 +68,35 @@ const privacyRouter = t.router({
     ),
 });
 
-export const appRouter = t.router({ patient: patientRouter, privacy: privacyRouter });
+const transmissionRouter = t.router({
+  listByPatient: protectedProcedure
+    .input(z.object({ patientId: z.uuid() }))
+    .query(({ ctx, input }) =>
+      ctx.transmissionService.listByPatient(ctx.professional.organizationId, input.patientId),
+    ),
+  createDraft: protectedProcedure
+    .input(transmissionDraftInputSchema)
+    .mutation(({ ctx, input }) =>
+      ctx.transmissionService.createDraft({
+        organizationId: ctx.professional.organizationId,
+        actor: { userId: ctx.professional.userId, role: ctx.professional.role },
+        input,
+      }),
+    ),
+  validate: protectedProcedure
+    .input(transmissionReferenceSchema)
+    .mutation(({ ctx, input }) =>
+      ctx.transmissionService.validate({
+        organizationId: ctx.professional.organizationId,
+        actor: { userId: ctx.professional.userId, role: ctx.professional.role },
+        transmissionId: input.transmissionId,
+      }),
+    ),
+});
+
+export const appRouter = t.router({
+  patient: patientRouter,
+  privacy: privacyRouter,
+  transmission: transmissionRouter,
+});
 export type AppRouter = typeof appRouter;

@@ -6,9 +6,14 @@ import { BetterAuthProvider } from "./auth/better-auth-provider.js";
 import { createBetterAuth } from "./auth/better-auth.js";
 import { parseEnvironment } from "./env.js";
 import { createServer } from "./server.js";
-import { DrizzleAuditSink, DrizzlePatientRepository } from "./services/drizzle-repositories.js";
+import {
+  DrizzleAuditSink,
+  DrizzlePatientRepository,
+  DrizzleTransmissionRepository,
+} from "./services/drizzle-repositories.js";
 import { PatientService } from "./services/patient-service.js";
 import { PrivacyService } from "./services/privacy-service.js";
+import { TransmissionService } from "./services/transmission-service.js";
 
 const environment = parseEnvironment(process.env);
 const { db } = createDatabase(environment.DATABASE_URL);
@@ -20,10 +25,12 @@ const masterKey =
       ? Buffer.from(environment.IDEL_MASTER_KEY_BASE64, "base64")
       : randomBytes(32);
 const patientRepository = new DrizzlePatientRepository(db);
+const auditSink = new DrizzleAuditSink(db);
+const encryptionService = new EncryptionService(new LocalKeyProvider(masterKey));
 const patientService = new PatientService(
   patientRepository,
-  new DrizzleAuditSink(db),
-  new EncryptionService(new LocalKeyProvider(masterKey)),
+  auditSink,
+  encryptionService,
 );
 const auth = createBetterAuth({
   database: authDatabase,
@@ -39,6 +46,11 @@ const server = createServer({
   authHandler: auth.handler,
   services: {
     patientService,
+    transmissionService: new TransmissionService(
+      new DrizzleTransmissionRepository(db),
+      auditSink,
+      encryptionService,
+    ),
     privacyService: new PrivacyService({
       get: (organizationId, patientId) => patientService.get(organizationId, patientId),
       deactivate: async (organizationId, patientId, actor) => {

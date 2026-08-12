@@ -40,7 +40,7 @@ export default function HomePage() {
 
         <nav className="home-nav" aria-label="Navigation principale">
           <a href="#fonctionnement">Fonctionnement</a>
-          <a href="#confiance">Confiance</a>
+          <Link href="/demo-transmissions">Transmissions</Link>
         </nav>
 
         <div className="home-header-actions">
@@ -72,9 +72,7 @@ export default function HomePage() {
               Tester avec un cas fictif
               <ArrowIcon />
             </Link>
-            <a className="home-text-button" href="#fonctionnement">
-              Découvrir comment ça marche
-            </a>
+            <Link className="home-text-button" href="/demo-transmissions">Voir la relève intelligente</Link>
           </div>
 
           <div className="home-reassurance" id="confiance">

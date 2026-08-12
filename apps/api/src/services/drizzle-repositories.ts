@@ -3,12 +3,14 @@ import { and, eq } from "drizzle-orm";
 import {
   auditLog,
   patients,
+  transmissions,
   type Database,
   withOrganization,
 } from "@idel-os/db";
 import type { EncryptedValue } from "@idel-os/shared";
 
 import type { AuditSink, PatientRepository, StoredPatient } from "./patient-service.js";
+import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
 
 export class DrizzlePatientRepository implements PatientRepository {
   public constructor(private readonly database: Database) {}
@@ -62,6 +64,46 @@ export class DrizzleAuditSink implements AuditSink {
   }
 }
 
+export class DrizzleTransmissionRepository implements TransmissionRepository {
+  public constructor(private readonly database: Database) {}
+
+  public async create(transmission: StoredTransmission): Promise<void> {
+    await withOrganization(this.database, transmission.organizationId, async (transaction) => {
+      await transaction.insert(transmissions).values(toDatabaseTransmission(transmission));
+    });
+  }
+
+  public async findById(organizationId: string, transmissionId: string): Promise<StoredTransmission | null> {
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const [transmission] = await transaction
+        .select()
+        .from(transmissions)
+        .where(and(eq(transmissions.orgId, organizationId), eq(transmissions.id, transmissionId)))
+        .limit(1);
+      return transmission === undefined ? null : fromDatabaseTransmission(transmission);
+    });
+  }
+
+  public async listByPatient(organizationId: string, patientId: string): Promise<StoredTransmission[]> {
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const rows = await transaction
+        .select()
+        .from(transmissions)
+        .where(and(eq(transmissions.orgId, organizationId), eq(transmissions.patientId, patientId)));
+      return rows.map(fromDatabaseTransmission);
+    });
+  }
+
+  public async update(transmission: StoredTransmission): Promise<void> {
+    await withOrganization(this.database, transmission.organizationId, async (transaction) => {
+      await transaction
+        .update(transmissions)
+        .set({ status: transmission.status, validatedAt: transmission.validatedAt })
+        .where(and(eq(transmissions.orgId, transmission.organizationId), eq(transmissions.id, transmission.id)));
+    });
+  }
+}
+
 function toDatabasePatient(patient: StoredPatient) {
   return {
     id: patient.id,
@@ -103,5 +145,42 @@ function fromDatabasePatient(patient: typeof patients.$inferSelect): StoredPatie
     aldDetailsEnc: patient.aldDetailsEnc as EncryptedValue | null,
     isDiabetic: patient.isDiabetic,
     isActive: patient.isActive,
+  };
+}
+
+function toDatabaseTransmission(transmission: StoredTransmission) {
+  return {
+    id: transmission.id,
+    orgId: transmission.organizationId,
+    visitId: transmission.visitId,
+    patientId: transmission.patientId,
+    authorUserId: transmission.authorUserId,
+    rawTranscriptEnc: transmission.rawTranscriptEnc,
+    structuredJsonEnc: transmission.structuredJsonEnc,
+    finalTextEnc: transmission.finalTextEnc,
+    status: transmission.status,
+    validatedAt: transmission.validatedAt,
+  };
+}
+
+function fromDatabaseTransmission(transmission: typeof transmissions.$inferSelect): StoredTransmission {
+  if (
+    transmission.rawTranscriptEnc === null ||
+    transmission.structuredJsonEnc === null ||
+    transmission.finalTextEnc === null
+  ) {
+    throw new Error("Transmission chiffrée incomplète.");
+  }
+  return {
+    id: transmission.id,
+    organizationId: transmission.orgId,
+    visitId: transmission.visitId,
+    patientId: transmission.patientId,
+    authorUserId: transmission.authorUserId,
+    rawTranscriptEnc: transmission.rawTranscriptEnc as EncryptedValue,
+    structuredJsonEnc: transmission.structuredJsonEnc as EncryptedValue,
+    finalTextEnc: transmission.finalTextEnc as EncryptedValue,
+    status: transmission.status,
+    validatedAt: transmission.validatedAt,
   };
 }
