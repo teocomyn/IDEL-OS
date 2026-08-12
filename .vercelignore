@@ -1,0 +1,8 @@
+IDEL-OS-MASTER-PROMPT.md
+IDEL-OS-PROMPT-COURT-MVP.md
+
+**/node_modules
+**/.next
+**/coverage
+playwright-report
+test-results
