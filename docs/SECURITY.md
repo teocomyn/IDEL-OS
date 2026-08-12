@@ -8,13 +8,18 @@ dépendance transitive de Metro via Expo :
 - GHSA-w3rx-r6r6-pgpr ;
 - GHSA-5p2g-fcmc-qvqq.
 
-Aucune version corrigée n’est publiée au moment de cette décision. Le composant est utilisé au
-build de l’application mobile et ne fait pas partie du backend de traitement des ordonnances.
-Mesures temporaires :
+Aucune version corrigée n’est publiée au moment de cette décision. IDEL OS rétroporte donc dans
+`patches/image-size@1.2.1.patch` les garde-fous qui imposent une progression des parseurs ICNS et
+JXL. Le hash du correctif est verrouillé dans `pnpm-lock.yaml`. L’exception d’audit porte uniquement
+sur ces deux identifiants GHSA déjà corrigés localement ; toute autre vulnérabilité élevée continue
+à faire échouer la CI.
+
+Le composant est utilisé au build de l’application mobile et ne fait pas partie du backend de
+traitement des ordonnances. Mesures complémentaires :
 
 1. ne jamais présenter à Metro un fichier fourni par un patient ou un utilisateur ;
 2. exécuter les builds dans un runner isolé, sans secrets de production ;
-3. surveiller les mises à jour Expo/Metro et appliquer la première version corrigée ;
+3. surveiller les mises à jour Expo/Metro, retirer le patch et l’exception dès la première version corrigée ;
 4. bloquer toute réutilisation de cette bibliothèque dans les pipelines OCR ou d’upload.
 
 Ce risque doit être réévalué avant chaque release et fermé avant la mise en production si une
