@@ -197,6 +197,11 @@ function FieldTodayScreen() {
 
       <View style={styles.message}><Text style={styles.messageText}>{message}</Text></View>
 
+      <View style={styles.quickActions}>
+        <Pressable style={styles.quickAction} onPress={() => router.push("/transmissions/summary")}><Text style={styles.quickActionLabel}>Relève de tournée</Text><Text style={styles.quickActionHint}>Lu, accusés et alertes →</Text></Pressable>
+        <Pressable style={styles.quickAction} onPress={() => router.push("/tour/optimize")}><Text style={styles.quickActionLabel}>Optimiser</Text><Text style={styles.quickActionHint}>Voir le diff avant →</Text></Pressable>
+      </View>
+
       {!ready && visits.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>Ouverture du coffre local…</Text><Text style={styles.body}>La biométrie protège la clé SQLCipher de votre tournée.</Text></View> : null}
       {ready && visits.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>Aucun passage chargé</Text><Text style={styles.body}>Connectez-vous une première fois avant de partir en tournée. Le mode avion sera ensuite disponible.</Text></View> : null}
 
@@ -213,6 +218,7 @@ function FieldTodayScreen() {
         <Text style={styles.detailTitle}>{selected.patientDisplayName}</Text>
         <Text style={styles.body}>{selected.address}</Text>
         <Pressable style={styles.mapButton} onPress={() => void openNavigation(selected.address)}><Text style={styles.mapButtonText}>Ouvrir l’itinéraire</Text></Pressable>
+        <Pressable style={styles.transmissionButton} onPress={() => router.push({ pathname: "/transmissions/[visitId]", params: { visitId: selected.id, patientId: selected.patientId, patientName: selected.patientDisplayName } })}><Text style={styles.transmissionButtonText}>Dicter la transmission</Text></Pressable>
 
         <Text style={styles.sectionTitle}>Checklist des actes</Text>
         {selected.acts.map((item) => <Pressable
@@ -278,6 +284,10 @@ const styles = StyleSheet.create({
   progressDivider: { width: 1, height: 38, backgroundColor: "#365155", marginHorizontal: 20 },
   message: { padding: 13, borderRadius: 13, backgroundColor: colors.info },
   messageText: { color: colors.ink, fontSize: 13, lineHeight: 19, fontWeight: "600" },
+  quickActions: { flexDirection: "row", gap: 9 },
+  quickAction: { flex: 1, padding: 14, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  quickActionLabel: { color: colors.ink, fontSize: 14, fontWeight: "900" },
+  quickActionHint: { color: colors.primary, fontSize: 10, fontWeight: "700", marginTop: 4 },
   empty: { minHeight: 190, padding: 22, justifyContent: "center", borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   emptyTitle: { color: colors.ink, fontSize: 22, fontWeight: "800" },
   body: { color: colors.muted, fontSize: 15, lineHeight: 22, marginTop: 5 },
@@ -300,6 +310,8 @@ const styles = StyleSheet.create({
   detailTitle: { color: colors.ink, fontSize: 25, fontWeight: "900", letterSpacing: -.5, marginTop: 5 },
   mapButton: { minHeight: 45, marginTop: 14, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.primary, borderRadius: 12 },
   mapButtonText: { color: colors.primary, fontWeight: "800", fontSize: 14 },
+  transmissionButton: { minHeight: 48, marginTop: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: colors.ink },
+  transmissionButtonText: { color: "white", fontWeight: "900", fontSize: 14 },
   sectionTitle: { color: colors.ink, fontSize: 14, fontWeight: "900", marginTop: 22, marginBottom: 9 },
   checkRow: { minHeight: 54, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 11, borderRadius: 12, backgroundColor: "#F4F7F6", marginBottom: 7 },
   checkRowDone: { backgroundColor: "#E4F4EF" },

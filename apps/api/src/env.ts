@@ -13,6 +13,8 @@ const envSchema = z.object({
   HDS_PROVIDER: z.string().min(1).optional(),
   HDS_CERTIFICATE_REFERENCE: z.string().min(1).optional(),
   HDS_REGION: z.string().min(1).optional(),
+  OSRM_URL: z.url().default("http://127.0.0.1:5000"),
+  VROOM_URL: z.url().default("http://127.0.0.1:3002"),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
 });
 
@@ -31,6 +33,9 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApiEnvironment {
       }
       if (environment.WEB_ORIGIN.includes("vercel.app")) {
         throw new Error("Le traitement de données de santé est interdit sur le déploiement Vercel public.");
+      }
+      if (environment.OSRM_URL.startsWith("https://router.project-osrm.org")) {
+        throw new Error("Le routage de santé doit utiliser l’instance OSRM auto-hébergée.");
       }
     }
   }

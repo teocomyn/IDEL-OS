@@ -1,4 +1,5 @@
 import type { OfflineVisit, StoredSyncAction } from "@idel-os/sync";
+import type { StructuredTransmission } from "@idel-os/shared";
 import { Platform } from "react-native";
 
 import { apiBaseUrl, authClient } from "../auth-client";
@@ -68,6 +69,80 @@ export async function enforceRemoteWipe(
   await purge();
   await trpcMutation("device.acknowledgeWipe", { deviceId });
   return true;
+}
+
+export type TransmissionView = {
+  id: string;
+  visitId: string;
+  patientId: string;
+  authorUserId: string;
+  audioDurationS: number | null;
+  transcriptionMode: "on_device" | "hds_server" | "manual";
+  rawTranscript: string;
+  structured: StructuredTransmission;
+  finalText: string;
+  status: "draft" | "validated";
+  validatedAt: string | null;
+  createdAt: string;
+  receipt: { readAt: string | null; acknowledgedAt: string | null } | null;
+};
+
+export async function fetchHandover(patientId: string): Promise<TransmissionView[]> {
+  return trpcQuery("transmission.sinceMyLastPassage", { patientId });
+}
+
+export async function fetchTourTransmissionSummary(date: string): Promise<{
+  date: string;
+  unreadCount: number;
+  acknowledgementPendingCount: number;
+  signalCount: number;
+  items: TransmissionView[];
+}> {
+  return trpcQuery("transmission.tourSummary", { date });
+}
+
+export async function createTransmissionDraft(input: {
+  transmissionId: string;
+  patientId: string;
+  visitId: string;
+  rawTranscript: string;
+  structured: StructuredTransmission;
+  audioDurationS: number | null;
+  transcriptionMode: "on_device" | "manual";
+}): Promise<TransmissionView> {
+  return trpcMutation("transmission.createDraft", { ...input, audioObjectKey: null });
+}
+
+export async function validateTransmission(transmissionId: string): Promise<TransmissionView> {
+  return trpcMutation("transmission.validate", { transmissionId });
+}
+
+export async function acknowledgeTransmission(
+  transmissionId: string,
+  action: "read" | "acknowledge",
+): Promise<void> {
+  await trpcMutation("transmission.receipt", { transmissionId, action });
+}
+
+export type OptimizationProposal = {
+  optimizationRunId: string;
+  date: string;
+  accepted: boolean;
+  assignments: Array<{ nurseId: string; stopIds: string[]; durationS: number; distanceM: number }>;
+  diff: {
+    moved: Array<{ stopId: string; fromNurseId: string | null; toNurseId: string; fromPosition: number | null; toPosition: number }>;
+    before: { durationS: number; distanceM: number; continuityBreaks: number; loadImbalance: number };
+    after: { durationS: number; distanceM: number; continuityBreaks: number; loadImbalance: number };
+    gains: { durationS: number; distanceM: number };
+  };
+};
+
+export async function proposeOptimization(date: string): Promise<OptimizationProposal> {
+  return trpcMutation("optimization.propose", { date, anchorAt: new Date().toISOString(), lockedVisitIds: [] });
+}
+
+export async function applyOptimization(optimizationRunId: string): Promise<OptimizationProposal> {
+  return trpcMutation("optimization.apply", { optimizationRunId });
 }
 
 async function trpcQuery<T>(path: string, input: unknown): Promise<T> {

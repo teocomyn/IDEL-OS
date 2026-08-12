@@ -1,6 +1,7 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import { createDatabase, EncryptionService, LocalKeyProvider } from "@idel-os/db";
+import { OsrmHttpClient, VroomHttpClient } from "@idel-os/routing";
 
 import { BetterAuthProvider } from "./auth/better-auth-provider.js";
 import { createBetterAuth } from "./auth/better-auth.js";
@@ -24,6 +25,8 @@ import { VisitService } from "./services/visit-service.js";
 import { PrescriptionService } from "./services/prescription-service.js";
 import { FieldService } from "./services/field-service.js";
 import { DeviceService } from "./services/device-service.js";
+import { OptimizationService } from "./services/optimization-service.js";
+import { DrizzleOptimizationRepository } from "./services/optimization-repository.js";
 
 const environment = parseEnvironment(process.env);
 const { db } = createDatabase(environment.DATABASE_URL);
@@ -90,6 +93,12 @@ const server = createServer({
       auditSink,
       () => new Date(),
       (userId) => authProvider.revokeUserSessions(userId),
+    ),
+    optimizationService: new OptimizationService(
+      new DrizzleOptimizationRepository(db),
+      new OsrmHttpClient(environment.OSRM_URL),
+      new VroomHttpClient(environment.VROOM_URL),
+      randomUUID,
     ),
   },
 });

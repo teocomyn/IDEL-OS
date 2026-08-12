@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@better-auth/expo": "1.6.27",
+    "@idel-os/shared": "workspace:*",
     "@idel-os/sync": "workspace:*",
     "better-auth": "1.6.27",
     "expo": "^57.0.12",
@@ -23,6 +24,7 @@
     "expo-network": "~57.0.1",
     "expo-router": "^57.0.12",
     "expo-secure-store": "~57.0.1",
+    "expo-speech-recognition": "56.0.1",
     "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "react": "^19.2.3",

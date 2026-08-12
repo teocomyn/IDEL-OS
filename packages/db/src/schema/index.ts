@@ -30,6 +30,7 @@ export const organizationScopedTables = [
   "tours",
   "optimization_runs",
   "transmissions",
+  "transmission_receipts",
   "vital_signs",
   "admin_tasks",
   "documents",
