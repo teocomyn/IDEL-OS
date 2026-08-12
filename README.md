@@ -44,6 +44,7 @@ Le test RLS utilise Testcontainers et requiert un daemon Docker actif. Sur macOS
 - moteur NGAP déterministe avec règles datées et scénarios de test ;
 - transmissions structurées, chiffrées et soumises à validation humaine ;
 - génération déterministe des passages depuis un plan de soins, avec regroupement des actes compatibles ;
+- optimisation contrôlée de la tournée avec comparaison avant/après, fenêtres horaires et passages verrouillables ;
 - cycle de vie sécurisé des passages : démarrage, checklist des actes et clôture auditée ;
 - démonstrations Next.js responsive pour Aujourd’hui, l’ordonnance, la cotation et les transmissions.
 

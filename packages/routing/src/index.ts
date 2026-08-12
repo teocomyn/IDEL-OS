@@ -17,6 +17,42 @@ export type PlannedVisit = {
   estimatedDurationMin: number;
 };
 
+export type TravelMetric = { distanceM: number; durationS: number };
+export type TravelMatrix = Record<string, Record<string, TravelMetric | undefined> | undefined>;
+export type RouteStop = {
+  id: string;
+  serviceDurationMin: number;
+  windowStartMin: number;
+  windowEndMin: number;
+};
+export type RouteOptimizationInput = {
+  currentOrder: string[];
+  stops: RouteStop[];
+  matrix: TravelMatrix;
+  startId: string;
+  endId: string;
+  departureMinute: number;
+  lockedStopIds: string[];
+};
+export type RouteMetrics = {
+  distanceM: number;
+  travelDurationS: number;
+  waitingDurationS: number;
+  serviceDurationS: number;
+  totalDurationS: number;
+  windowViolationMin: number;
+};
+export type RouteOptimizationProposal = {
+  currentOrder: string[];
+  proposedOrder: string[];
+  lockedStopIds: string[];
+  movedStopIds: string[];
+  before: RouteMetrics;
+  after: RouteMetrics;
+  distanceGainM: number;
+  durationGainS: number;
+};
+
 const MAX_SCHEDULE_DAYS = 366;
 
 export function generateVisitSchedule(rawInput: CarePlanScheduleInput): PlannedVisit[] {
@@ -70,6 +106,122 @@ export function generateVisitSchedule(rawInput: CarePlanScheduleInput): PlannedV
     }
   }
   return visits;
+}
+
+export function proposeRouteOptimization(input: RouteOptimizationInput): RouteOptimizationProposal {
+  validateRouteInput(input);
+  const locked = new Set(input.lockedStopIds);
+  const before = evaluateRoute({ ...input, order: input.currentOrder });
+  let bestOrder = [...input.currentOrder];
+  let bestMetrics = before;
+
+  for (let iteration = 0; iteration < 100; iteration += 1) {
+    let improvedOrder = bestOrder;
+    let improvedMetrics = bestMetrics;
+    for (let left = 0; left < bestOrder.length; left += 1) {
+      if (locked.has(bestOrder[left]!)) continue;
+      for (let right = left + 1; right < bestOrder.length; right += 1) {
+        if (locked.has(bestOrder[right]!)) continue;
+        const candidate = [...bestOrder];
+        [candidate[left], candidate[right]] = [candidate[right]!, candidate[left]!];
+        const metrics = evaluateRoute({ ...input, order: candidate });
+        if (compareMetrics(metrics, improvedMetrics) < 0) {
+          improvedOrder = candidate;
+          improvedMetrics = metrics;
+        }
+      }
+    }
+    if (improvedOrder === bestOrder) break;
+    bestOrder = improvedOrder;
+    bestMetrics = improvedMetrics;
+  }
+
+  return {
+    currentOrder: [...input.currentOrder],
+    proposedOrder: bestOrder,
+    lockedStopIds: [...input.lockedStopIds],
+    movedStopIds: input.currentOrder.filter((id, index) => bestOrder[index] !== id),
+    before,
+    after: bestMetrics,
+    distanceGainM: before.distanceM - bestMetrics.distanceM,
+    durationGainS: before.travelDurationS - bestMetrics.travelDurationS,
+  };
+}
+
+export function evaluateRoute(input: RouteOptimizationInput & { order: string[] }): RouteMetrics {
+  if (input.order.length === 0 && input.startId === input.endId) {
+    return {
+      distanceM: 0,
+      travelDurationS: 0,
+      waitingDurationS: 0,
+      serviceDurationS: 0,
+      totalDurationS: 0,
+      windowViolationMin: 0,
+    };
+  }
+  const stopById = new Map(input.stops.map((stop) => [stop.id, stop]));
+  let previousId = input.startId;
+  let currentMinute = input.departureMinute;
+  let distanceM = 0;
+  let travelDurationS = 0;
+  let waitingDurationS = 0;
+  let serviceDurationS = 0;
+  let windowViolationMin = 0;
+
+  for (const stopId of input.order) {
+    const stop = stopById.get(stopId);
+    if (stop === undefined) throw new Error(`Passage inconnu : ${stopId}.`);
+    const travel = getTravel(input.matrix, previousId, stopId);
+    distanceM += travel.distanceM;
+    travelDurationS += travel.durationS;
+    currentMinute += travel.durationS / 60;
+    if (currentMinute < stop.windowStartMin) {
+      waitingDurationS += (stop.windowStartMin - currentMinute) * 60;
+      currentMinute = stop.windowStartMin;
+    }
+    if (currentMinute > stop.windowEndMin) windowViolationMin += currentMinute - stop.windowEndMin;
+    currentMinute += stop.serviceDurationMin;
+    serviceDurationS += stop.serviceDurationMin * 60;
+    previousId = stopId;
+  }
+
+  const returnTravel = getTravel(input.matrix, previousId, input.endId);
+  distanceM += returnTravel.distanceM;
+  travelDurationS += returnTravel.durationS;
+  return {
+    distanceM,
+    travelDurationS,
+    waitingDurationS,
+    serviceDurationS,
+    totalDurationS: travelDurationS + waitingDurationS + serviceDurationS,
+    windowViolationMin: Math.ceil(windowViolationMin),
+  };
+}
+
+function validateRouteInput(input: RouteOptimizationInput): void {
+  const stopIds = input.stops.map(({ id }) => id);
+  const uniqueOrder = new Set(input.currentOrder);
+  if (
+    uniqueOrder.size !== input.currentOrder.length ||
+    input.currentOrder.length !== stopIds.length ||
+    stopIds.some((id) => !uniqueOrder.has(id))
+  ) {
+    throw new Error("Chaque passage doit apparaître exactement une fois dans l’ordre courant.");
+  }
+  if (new Set(stopIds).size !== stopIds.length) throw new Error("Les identifiants de passage doivent être uniques.");
+  if (input.lockedStopIds.some((id) => !uniqueOrder.has(id))) throw new Error("Passage verrouillé inconnu.");
+}
+
+function getTravel(matrix: TravelMatrix, from: string, to: string): TravelMetric {
+  const metric = matrix[from]?.[to];
+  if (metric === undefined) throw new Error(`Trajet manquant : ${from} → ${to}.`);
+  return metric;
+}
+
+function compareMetrics(left: RouteMetrics, right: RouteMetrics): number {
+  return left.windowViolationMin - right.windowViolationMin ||
+    left.travelDurationS - right.travelDurationS ||
+    left.distanceM - right.distanceM;
 }
 
 function windowsOverlap(left: CareTimeWindow, right: CareTimeWindow): boolean {
