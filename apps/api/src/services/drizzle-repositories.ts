@@ -1,14 +1,17 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, lt, or } from "drizzle-orm";
 
 import {
   auditLog,
+  actCatalog,
   carePlanItems,
   carePlans,
   patients,
+  mobileDevices,
   prescriptions,
   prescriptionItems,
   transmissions,
   visitActs,
+  visitExceptions,
   visits,
   type Database,
   withOrganization,
@@ -20,6 +23,9 @@ import type { StoredTransmission, TransmissionRepository } from "./transmission-
 import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
 import type { StoredVisitLifecycle, VisitLifecycleRepository } from "./visit-service.js";
 import type { PrescriptionRepository, StoredPrescription } from "./prescription-service.js";
+import type { FieldRepository, StoredTodayVisit, StoredVisitException } from "./field-service.js";
+import type { DeviceRepository, MobileDevice } from "./device-service.js";
+import { parisDayBounds } from "./paris-time.js";
 
 export class DrizzlePatientRepository implements PatientRepository {
   public constructor(private readonly database: Database) {}
@@ -351,6 +357,176 @@ export class DrizzlePrescriptionRepository implements PrescriptionRepository {
       }
     });
   }
+}
+
+export class DrizzleFieldRepository implements FieldRepository {
+  public constructor(private readonly database: Database) {}
+
+  public async listToday(
+    organizationId: string,
+    assignedUserId: string,
+    date: string,
+  ): Promise<StoredTodayVisit[]> {
+    const { start, end } = parisDayBounds(date);
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const rows = await transaction
+        .select({ visit: visits, patient: patients })
+        .from(visits)
+        .innerJoin(patients, and(eq(patients.orgId, organizationId), eq(patients.id, visits.patientId)))
+        .where(and(
+          eq(visits.orgId, organizationId),
+          gte(visits.scheduledAt, start),
+          lt(visits.scheduledAt, end),
+          or(eq(visits.assignedUserId, assignedUserId), isNull(visits.assignedUserId)),
+        ))
+        .orderBy(asc(visits.positionInTour), asc(visits.scheduledAt));
+      return Promise.all(rows.map(async ({ visit, patient }) => {
+        const acts = await transaction
+          .select({ id: visitActs.id, performed: visitActs.performed, label: actCatalog.label })
+          .from(visitActs)
+          .leftJoin(actCatalog, eq(actCatalog.id, visitActs.actCatalogId))
+          .where(and(eq(visitActs.orgId, organizationId), eq(visitActs.visitId, visit.id)));
+        return toStoredTodayVisit(visit, patient, acts);
+      }));
+    });
+  }
+
+  public async findAssignedVisit(
+    organizationId: string,
+    assignedUserId: string,
+    visitId: string,
+  ): Promise<StoredTodayVisit | null> {
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const [row] = await transaction
+        .select({ visit: visits, patient: patients })
+        .from(visits)
+        .innerJoin(patients, and(eq(patients.orgId, organizationId), eq(patients.id, visits.patientId)))
+        .where(and(
+          eq(visits.orgId, organizationId),
+          eq(visits.id, visitId),
+          or(eq(visits.assignedUserId, assignedUserId), isNull(visits.assignedUserId)),
+        ))
+        .limit(1);
+      if (row === undefined) return null;
+      const acts = await transaction
+        .select({ id: visitActs.id, performed: visitActs.performed, label: actCatalog.label })
+        .from(visitActs)
+        .leftJoin(actCatalog, eq(actCatalog.id, visitActs.actCatalogId))
+        .where(and(eq(visitActs.orgId, organizationId), eq(visitActs.visitId, visitId)));
+      return toStoredTodayVisit(row.visit, row.patient, acts);
+    });
+  }
+
+  public async recordException(exception: StoredVisitException): Promise<boolean> {
+    return withOrganization(this.database, exception.organizationId, async (transaction) => {
+      const inserted = await transaction.insert(visitExceptions).values({
+        orgId: exception.organizationId,
+        visitId: exception.visitId,
+        recordedByUserId: exception.recordedByUserId,
+        idempotencyKey: exception.idempotencyKey,
+        type: exception.type,
+        noteEnc: exception.noteEnc,
+        previousScheduledAt: exception.previousScheduledAt,
+        rescheduledAt: exception.rescheduledAt,
+      }).onConflictDoNothing({
+        target: [visitExceptions.orgId, visitExceptions.idempotencyKey],
+      }).returning({ id: visitExceptions.id });
+      if (inserted.length === 0) return false;
+      await transaction.update(visits).set({
+        status: exception.resultingStatus,
+        ...(exception.rescheduledAt === null ? {} : { scheduledAt: exception.rescheduledAt }),
+      }).where(and(eq(visits.orgId, exception.organizationId), eq(visits.id, exception.visitId)));
+      return true;
+    });
+  }
+}
+
+export class DrizzleDeviceRepository implements DeviceRepository {
+  public constructor(private readonly database: Database) {}
+
+  public async upsert(device: MobileDevice): Promise<void> {
+    await withOrganization(this.database, device.organizationId, async (transaction) => {
+      await transaction.insert(mobileDevices).values({
+        id: device.id,
+        orgId: device.organizationId,
+        userId: device.userId,
+        label: device.label,
+        platform: device.platform,
+        biometricEnabled: device.biometricEnabled,
+        lastSeenAt: new Date(),
+      }).onConflictDoUpdate({
+        target: mobileDevices.id,
+        set: {
+          label: device.label,
+          platform: device.platform,
+          biometricEnabled: device.biometricEnabled,
+          lastSeenAt: new Date(),
+        },
+      });
+    });
+  }
+
+  public async findById(organizationId: string, deviceId: string): Promise<MobileDevice | null> {
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const [device] = await transaction.select().from(mobileDevices).where(and(
+        eq(mobileDevices.orgId, organizationId),
+        eq(mobileDevices.id, deviceId),
+      )).limit(1);
+      return device === undefined ? null : {
+        id: device.id,
+        organizationId: device.orgId,
+        userId: device.userId,
+        label: device.label,
+        platform: device.platform === "ios" ? "ios" : "android",
+        biometricEnabled: device.biometricEnabled,
+        wipeRequestedAt: device.wipeRequestedAt,
+        wipedAt: device.wipedAt,
+      };
+    });
+  }
+
+  public async requestWipe(organizationId: string, deviceId: string, requestedAt: Date): Promise<void> {
+    await withOrganization(this.database, organizationId, async (transaction) => {
+      await transaction.update(mobileDevices).set({ wipeRequestedAt: requestedAt }).where(and(
+        eq(mobileDevices.orgId, organizationId),
+        eq(mobileDevices.id, deviceId),
+      ));
+    });
+  }
+
+  public async acknowledgeWipe(organizationId: string, deviceId: string, wipedAt: Date): Promise<void> {
+    await withOrganization(this.database, organizationId, async (transaction) => {
+      await transaction.update(mobileDevices).set({ wipedAt }).where(and(
+        eq(mobileDevices.orgId, organizationId),
+        eq(mobileDevices.id, deviceId),
+      ));
+    });
+  }
+}
+
+function toStoredTodayVisit(
+  visit: typeof visits.$inferSelect,
+  patient: typeof patients.$inferSelect,
+  acts: Array<{ id: string; performed: boolean; label: string | null }>,
+): StoredTodayVisit {
+  return {
+    id: visit.id,
+    patientId: visit.patientId,
+    assignedUserId: visit.assignedUserId,
+    scheduledAt: visit.scheduledAt,
+    timeWindowStart: visit.timeWindowStart,
+    timeWindowEnd: visit.timeWindowEnd,
+    estimatedDurationMin: visit.estimatedDurationMin,
+    status: visit.status,
+    positionInTour: visit.positionInTour,
+    firstNameEnc: patient.firstNameEnc as EncryptedValue,
+    lastNameEnc: patient.lastNameEnc as EncryptedValue,
+    addressLineEnc: patient.addressLineEnc as EncryptedValue,
+    postalCode: patient.postalCode,
+    city: patient.city,
+    geo: patient.geo,
+    acts: acts.map((act) => ({ id: act.id, performed: act.performed, label: act.label ?? "Acte de soins" })),
+  };
 }
 
 function toExtractionEnvelope(

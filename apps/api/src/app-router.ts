@@ -13,6 +13,10 @@ import {
   prescriptionDraftInputSchema,
   prescriptionReferenceSchema,
   prescriptionValidationInputSchema,
+  todayVisitsInputSchema,
+  visitExceptionInputSchema,
+  mobileDeviceRegistrationSchema,
+  mobileDeviceReferenceSchema,
 } from "@idel-os/shared";
 
 import type { AppContext } from "./context/app-context.js";
@@ -156,6 +160,59 @@ const prescriptionRouter = t.router({
   ),
 });
 
+const fieldRouter = t.router({
+  today: protectedProcedure.input(todayVisitsInputSchema).query(({ ctx, input }) =>
+    ctx.fieldService.today(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.date,
+    ),
+  ),
+  recordException: protectedProcedure.input(visitExceptionInputSchema).mutation(({ ctx, input }) =>
+    ctx.fieldService.recordException({
+      organizationId: ctx.professional.organizationId,
+      actor: { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    }),
+  ),
+});
+
+const deviceRouter = t.router({
+  register: protectedProcedure.input(mobileDeviceRegistrationSchema).mutation(({ ctx, input }) =>
+    ctx.deviceService.register({
+      organizationId: ctx.professional.organizationId,
+      actor: { userId: ctx.professional.userId, role: ctx.professional.role },
+      device: {
+        id: input.deviceId,
+        label: input.label,
+        platform: input.platform,
+        biometricEnabled: input.biometricEnabled,
+      },
+    }),
+  ),
+  status: protectedProcedure.input(mobileDeviceReferenceSchema).query(({ ctx, input }) =>
+    ctx.deviceService.status(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.deviceId,
+    ),
+  ),
+  requestWipe: protectedProcedure.input(mobileDeviceReferenceSchema).mutation(({ ctx, input }) =>
+    ctx.deviceService.requestWipe(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.deviceId,
+    ),
+  ),
+  acknowledgeWipe: protectedProcedure.input(mobileDeviceReferenceSchema).mutation(({ ctx, input }) =>
+    ctx.deviceService.acknowledgeWipe(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.deviceId,
+    ),
+  ),
+});
+
 export const appRouter = t.router({
   patient: patientRouter,
   privacy: privacyRouter,
@@ -163,5 +220,7 @@ export const appRouter = t.router({
   carePlan: carePlanRouter,
   visit: visitRouter,
   prescription: prescriptionRouter,
+  field: fieldRouter,
+  device: deviceRouter,
 });
 export type AppRouter = typeof appRouter;

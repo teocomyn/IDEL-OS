@@ -17,4 +17,5 @@ export const tourStatusEnum = pgEnum("tour_status", ["draft", "published", "runn
 export const transmissionStatusEnum = pgEnum("transmission_status", ["draft", "validated"]);
 export const adminTaskStatusEnum = pgEnum("admin_task_status", ["open", "snoozed", "done"]);
 export const documentSourceEnum = pgEnum("invoice_source", ["manual", "import_csv"]);
+export const visitExceptionTypeEnum = pgEnum("visit_exception_type", ["absence", "refusal", "hospitalization", "emergency", "reschedule"]);
 export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "paid", "rejected", "unpaid"]);

@@ -11,6 +11,8 @@ import {
   DrizzleCarePlanRepository,
   DrizzlePatientRepository,
   DrizzlePrescriptionRepository,
+  DrizzleFieldRepository,
+  DrizzleDeviceRepository,
   DrizzleTransmissionRepository,
   DrizzleVisitLifecycleRepository,
 } from "./services/drizzle-repositories.js";
@@ -20,6 +22,8 @@ import { TransmissionService } from "./services/transmission-service.js";
 import { CarePlanService } from "./services/care-plan-service.js";
 import { VisitService } from "./services/visit-service.js";
 import { PrescriptionService } from "./services/prescription-service.js";
+import { FieldService } from "./services/field-service.js";
+import { DeviceService } from "./services/device-service.js";
 
 const environment = parseEnvironment(process.env);
 const { db } = createDatabase(environment.DATABASE_URL);
@@ -42,13 +46,19 @@ const auth = createBetterAuth({
   database: authDatabase,
   secret: environment.BETTER_AUTH_SECRET,
   baseUrl: environment.BETTER_AUTH_URL,
-  trustedOrigin: environment.WEB_ORIGIN,
+  trustedOrigins: [
+    environment.WEB_ORIGIN,
+    "idel-os://",
+    "idel-os://*",
+    ...(environment.NODE_ENV === "development" ? ["exp://", "exp://**"] : []),
+  ],
   sendEmail: async () => {
     // The production adapter must target an HDS-compatible transactional email route.
   },
 });
+const authProvider = new BetterAuthProvider(auth, authDatabase);
 const server = createServer({
-  authProvider: new BetterAuthProvider(auth, authDatabase),
+  authProvider,
   authHandler: auth.handler,
   services: {
     patientService,
@@ -69,6 +79,17 @@ const server = createServer({
       new DrizzlePrescriptionRepository(db),
       auditSink,
       encryptionService,
+    ),
+    fieldService: new FieldService(
+      new DrizzleFieldRepository(db),
+      auditSink,
+      encryptionService,
+    ),
+    deviceService: new DeviceService(
+      new DrizzleDeviceRepository(db),
+      auditSink,
+      () => new Date(),
+      (userId) => authProvider.revokeUserSessions(userId),
     ),
   },
 });

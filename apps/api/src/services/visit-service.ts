@@ -33,6 +33,7 @@ export class VisitService {
 
   public async start(command: { organizationId: string; actor: Actor; visitId: string }): Promise<StoredVisitLifecycle> {
     const visit = await this.getNurseVisit(command.organizationId, command.actor, command.visitId);
+    if (visit.status === "in_progress") return visit;
     if (visit.status !== "planned") {
       throw new DomainError("VISIT_NOT_PLANNED", "Seul un passage planifié peut être démarré.");
     }
@@ -50,6 +51,7 @@ export class VisitService {
     performed: boolean;
   }): Promise<StoredVisitLifecycle> {
     const visit = await this.getNurseVisit(command.organizationId, command.actor, command.visitId);
+    if (visit.status === "done") return visit;
     if (visit.status !== "in_progress") {
       throw new DomainError("VISIT_NOT_IN_PROGRESS", "Démarrez le passage avant de valider les actes.");
     }
@@ -66,6 +68,7 @@ export class VisitService {
 
   public async complete(command: { organizationId: string; actor: Actor; visitId: string }): Promise<StoredVisitLifecycle> {
     const visit = await this.getNurseVisit(command.organizationId, command.actor, command.visitId);
+    if (visit.status === "done") return visit;
     if (visit.status !== "in_progress") {
       throw new DomainError("VISIT_NOT_IN_PROGRESS", "Ce passage n’est pas en cours.");
     }

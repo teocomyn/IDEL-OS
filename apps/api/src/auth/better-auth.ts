@@ -10,6 +10,7 @@ import {
 } from "@idel-os/db";
 import { professionalIdentitySchema } from "@idel-os/shared";
 import { eq } from "drizzle-orm";
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { haveIBeenPwned, twoFactor } from "better-auth/plugins";
@@ -21,14 +22,14 @@ export function createBetterAuth(options: {
   database: Database;
   secret: string;
   baseUrl: string;
-  trustedOrigin: string;
+  trustedOrigins: string[];
   sendEmail: EmailSender;
 }) {
   return betterAuth({
     appName: "IDEL OS",
     baseURL: options.baseUrl,
     secret: options.secret,
-    trustedOrigins: [options.trustedOrigin],
+    trustedOrigins: options.trustedOrigins,
     advanced: { database: { generateId: "uuid" } },
     database: drizzleAdapter(options.database, {
       provider: "pg",
@@ -106,6 +107,7 @@ export function createBetterAuth(options: {
       },
     },
     plugins: [
+      expo(),
       haveIBeenPwned(),
       twoFactor({
         issuer: "IDEL OS",

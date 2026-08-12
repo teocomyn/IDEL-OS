@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@better-auth/expo": "1.6.27",
     "@idel-os/db": "workspace:*",
     "@idel-os/ocr": "workspace:*",
     "@idel-os/routing": "workspace:*",

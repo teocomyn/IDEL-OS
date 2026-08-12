@@ -53,6 +53,23 @@ export type RouteOptimizationProposal = {
   durationGainS: number;
 };
 
+export type TimelineStop = {
+  id: string;
+  plannedAt: Date;
+  windowStart: Date;
+  windowEnd: Date;
+  serviceDurationMin: number;
+  travelFromPreviousS: number;
+  status: "planned" | "in_progress" | "done" | "missed" | "cancelled" | "refused";
+};
+
+export type RecalculatedStop = TimelineStop & {
+  estimatedArrivalAt: Date;
+  estimatedDepartureAt: Date;
+  delayMin: number;
+  windowViolationMin: number;
+};
+
 const MAX_SCHEDULE_DAYS = 366;
 
 export function generateVisitSchedule(rawInput: CarePlanScheduleInput): PlannedVisit[] {
@@ -196,6 +213,35 @@ export function evaluateRoute(input: RouteOptimizationInput & { order: string[] 
     totalDurationS: travelDurationS + waitingDurationS + serviceDurationS,
     windowViolationMin: Math.ceil(windowViolationMin),
   };
+}
+
+/** Recalcule les heures affichées après chaque événement terrain, sans réordonner silencieusement la tournée. */
+export function recalculateTimeline(input: {
+  anchorAt: Date;
+  stops: TimelineStop[];
+}): RecalculatedStop[] {
+  let cursor = new Date(input.anchorAt);
+  const result: RecalculatedStop[] = [];
+  for (const stop of input.stops) {
+    if (["done", "missed", "cancelled", "refused"].includes(stop.status)) continue;
+    const arrivalAfterTravel = new Date(cursor.getTime() + stop.travelFromPreviousS * 1_000);
+    const estimatedArrivalAt = new Date(Math.max(
+      arrivalAfterTravel.getTime(),
+      stop.windowStart.getTime(),
+    ));
+    const estimatedDepartureAt = new Date(
+      estimatedArrivalAt.getTime() + stop.serviceDurationMin * 60_000,
+    );
+    const delayMin = Math.max(0, Math.round(
+      (estimatedArrivalAt.getTime() - stop.plannedAt.getTime()) / 60_000,
+    ));
+    const windowViolationMin = Math.max(0, Math.ceil(
+      (estimatedArrivalAt.getTime() - stop.windowEnd.getTime()) / 60_000,
+    ));
+    result.push({ ...stop, estimatedArrivalAt, estimatedDepartureAt, delayMin, windowViolationMin });
+    cursor = estimatedDepartureAt;
+  }
+  return result;
 }
 
 function validateRouteInput(input: RouteOptimizationInput): void {

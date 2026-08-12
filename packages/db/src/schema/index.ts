@@ -35,6 +35,9 @@ export const organizationScopedTables = [
   "documents",
   "invoices_mirror",
   "mileage_logs",
+  "visit_exceptions",
+  "mobile_devices",
+  "processed_mobile_actions",
 ] as const;
 
 export const encryptedColumns = [
@@ -55,4 +58,5 @@ export const encryptedColumns = [
   "raw_ocr_text_enc",
   "raw_transcript_enc",
   "final_text_enc",
+  "note_enc",
 ] as const;

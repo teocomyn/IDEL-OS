@@ -119,3 +119,34 @@ export const twoFactors = pgTable("two_factors", {
   backupCodes: text("backup_codes_enc").notNull(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
 });
+
+export const mobileDevices = pgTable(
+  "mobile_devices",
+  {
+    id: uuid("id").primaryKey(),
+    orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    platform: text("platform").notNull(),
+    biometricEnabled: boolean("biometric_enabled").default(false).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+    wipeRequestedAt: timestamp("wipe_requested_at", { withTimezone: true }),
+    wipedAt: timestamp("wiped_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("mobile_devices_org_user_idx").on(table.orgId, table.userId)],
+);
+
+export const processedMobileActions = pgTable(
+  "processed_mobile_actions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    deviceId: uuid("device_id").notNull().references(() => mobileDevices.id, { onDelete: "cascade" }),
+    idempotencyKey: text("idempotency_key").notNull(),
+    kind: text("kind").notNull(),
+    resourceId: uuid("resource_id"),
+    processedAt: timestamp("processed_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("processed_mobile_action_unique").on(table.orgId, table.idempotencyKey)],
+);

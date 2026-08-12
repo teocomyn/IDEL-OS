@@ -98,11 +98,11 @@ describe("VisitService", () => {
     expect(JSON.stringify(audit.records)).not.toContain(firstActId);
   });
 
-  it("empêche de terminer deux fois un passage", async () => {
+  it("rend la fin idempotente pour un rejeu après coupure réseau", async () => {
     const { service } = setup(plannedVisit({ status: "done", acts: [
       { id: firstActId, performed: true },
       { id: secondActId, performed: true },
     ] }));
-    await expect(service.complete({ organizationId, actor, visitId })).rejects.toThrow("n’est pas en cours");
+    await expect(service.complete({ organizationId, actor, visitId })).resolves.toMatchObject({ status: "done" });
   });
 });

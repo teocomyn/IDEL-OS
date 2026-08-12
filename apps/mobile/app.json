@@ -6,8 +6,26 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "plugins": ["expo-router"],
-    "experiments": { "typedRoutes": true },
-    "web": { "bundler": "metro" }
+    "ios": {
+      "bundleIdentifier": "fr.idelos.mobile",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "IDEL OS utilise Face ID pour protéger le cache de tournée contenant des données de santé."
+      }
+    },
+    "android": {
+      "package": "fr.idelos.mobile"
+    },
+    "plugins": [
+      "expo-router",
+      ["expo-sqlite", { "useSQLCipher": true }],
+      ["expo-secure-store", { "faceIDPermission": "IDEL OS utilise Face ID pour déverrouiller votre tournée." }],
+      ["expo-local-authentication", { "faceIDPermission": "IDEL OS utilise Face ID pour déverrouiller votre tournée." }]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "web": {
+      "bundler": "metro"
+    }
   }
 }

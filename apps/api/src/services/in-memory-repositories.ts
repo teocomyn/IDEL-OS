@@ -3,6 +3,8 @@ import type { StoredTransmission, TransmissionRepository } from "./transmission-
 import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
 import type { StoredVisitLifecycle, VisitLifecycleRepository } from "./visit-service.js";
 import type { PrescriptionRepository, StoredPrescription } from "./prescription-service.js";
+import type { FieldRepository, StoredTodayVisit, StoredVisitException } from "./field-service.js";
+import type { DeviceRepository, MobileDevice } from "./device-service.js";
 
 export class InMemoryPatientRepository implements PatientRepository {
   private readonly patients = new Map<string, StoredPatient>();
@@ -107,5 +109,66 @@ export class InMemoryPrescriptionRepository implements PrescriptionRepository {
 
   public async update(prescription: StoredPrescription): Promise<void> {
     this.prescriptions.set(`${prescription.organizationId}:${prescription.id}`, structuredClone(prescription));
+  }
+}
+
+export class InMemoryFieldRepository implements FieldRepository {
+  public readonly visits = new Map<string, StoredTodayVisit>();
+  public readonly exceptions: StoredVisitException[] = [];
+
+  public async listToday(_organizationId: string, assignedUserId: string, date: string): Promise<StoredTodayVisit[]> {
+    return [...this.visits.values()].filter((visit) =>
+      (visit.assignedUserId === null || visit.assignedUserId === assignedUserId)
+      && visit.scheduledAt.toISOString().slice(0, 10) === date,
+    ).map((visit) => structuredClone(visit));
+  }
+
+  public async findAssignedVisit(_organizationId: string, assignedUserId: string, visitId: string): Promise<StoredTodayVisit | null> {
+    const visit = this.visits.get(visitId);
+    return visit === undefined || (visit.assignedUserId !== null && visit.assignedUserId !== assignedUserId)
+      ? null
+      : structuredClone(visit);
+  }
+
+  public async recordException(exception: StoredVisitException): Promise<boolean> {
+    if (this.exceptions.some(({ idempotencyKey }) => idempotencyKey === exception.idempotencyKey)) return false;
+    this.exceptions.push(structuredClone(exception));
+    const visit = this.visits.get(exception.visitId);
+    if (visit !== undefined) {
+      this.visits.set(exception.visitId, {
+        ...visit,
+        status: exception.resultingStatus,
+        scheduledAt: exception.rescheduledAt ?? visit.scheduledAt,
+      });
+    }
+    return true;
+  }
+}
+
+export class InMemoryDeviceRepository implements DeviceRepository {
+  public readonly devices = new Map<string, MobileDevice>();
+
+  public async upsert(device: MobileDevice): Promise<void> {
+    const existing = this.devices.get(device.id);
+    this.devices.set(device.id, structuredClone(existing === undefined ? device : {
+      ...device,
+      wipeRequestedAt: existing.wipeRequestedAt,
+      wipedAt: existing.wipedAt,
+    }));
+  }
+
+  public async findById(organizationId: string, deviceId: string): Promise<MobileDevice | null> {
+    const device = this.devices.get(deviceId);
+    return device === undefined || device.organizationId !== organizationId ? null : structuredClone(device);
+  }
+
+  public async requestWipe(_organizationId: string, deviceId: string, requestedAt: Date): Promise<void> {
+    const device = this.devices.get(deviceId);
+    if (device !== undefined) this.devices.set(deviceId, { ...device, wipeRequestedAt: requestedAt });
+  }
+
+  public async acknowledgeWipe(_organizationId: string, deviceId: string, wipedAt: Date): Promise<void> {
+    const device = this.devices.get(deviceId);
+    if (device !== undefined) this.devices.set(deviceId, { ...device, wipedAt });
   }
 }

@@ -1,7 +1,7 @@
-import { boolean, date, index, integer, jsonb, numeric, pgTable, point, text, time, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, numeric, pgTable, point, text, time, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { organizations, users } from "./core.js";
-import { carePlanStatusEnum, prescriptionSourceEnum, prescriptionStatusEnum, visitStatusEnum } from "./enums.js";
+import { carePlanStatusEnum, prescriptionSourceEnum, prescriptionStatusEnum, visitExceptionTypeEnum, visitStatusEnum } from "./enums.js";
 import { patients, prescribers } from "./patients.js";
 
 export const prescriptions = pgTable("prescriptions", {
@@ -95,3 +95,16 @@ export const visitActs = pgTable("visit_acts", {
   quantity: numeric("quantity", { precision: 8, scale: 2 }).default("1").notNull(),
   notesEnc: text("notes_enc"),
 });
+
+export const visitExceptions = pgTable("visit_exceptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  visitId: uuid("visit_id").notNull().references(() => visits.id, { onDelete: "cascade" }),
+  recordedByUserId: uuid("recorded_by_user_id").notNull().references(() => users.id),
+  idempotencyKey: text("idempotency_key").notNull(),
+  type: visitExceptionTypeEnum("type").notNull(),
+  noteEnc: text("note_enc"),
+  previousScheduledAt: timestamp("previous_scheduled_at", { withTimezone: true }),
+  rescheduledAt: timestamp("rescheduled_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [uniqueIndex("visit_exceptions_org_idempotency_unique").on(table.orgId, table.idempotencyKey)]);
