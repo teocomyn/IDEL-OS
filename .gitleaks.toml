@@ -1,0 +1,8 @@
+title = "IDEL OS gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Documented local-only placeholders"
+paths = ['''\.env\.example$''', '''infra/docker-compose\.yml$''']

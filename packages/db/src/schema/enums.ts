@@ -1,0 +1,20 @@
+import { pgEnum } from "drizzle-orm/pg-core";
+
+export const organizationTypeEnum = pgEnum("organization_type", ["solo", "cabinet"]);
+export const userRoleEnum = pgEnum("user_role", ["owner", "idel", "remplacant", "secretaire"]);
+export const mobilityEnum = pgEnum("mobility", ["autonomous", "assisted", "bedridden"]);
+export const prescriptionSourceEnum = pgEnum("prescription_source", ["photo", "pdf", "manual", "import"]);
+export const prescriptionStatusEnum = pgEnum("prescription_status", ["draft", "validated", "expired", "archived"]);
+export const carePlanStatusEnum = pgEnum("care_plan_status", ["active", "paused", "completed", "cancelled"]);
+export const visitStatusEnum = pgEnum("visit_status", ["planned", "in_progress", "done", "missed", "cancelled", "refused"]);
+export const codingProposerEnum = pgEnum("coding_proposer", ["ai", "rules", "user"]);
+export const codingStatusEnum = pgEnum("coding_status", ["proposed", "accepted", "edited", "rejected", "exported"]);
+export const codingLineTypeEnum = pgEnum("coding_line_type", ["act", "majoration", "deplacement", "ik", "forfait"]);
+export const alertSeverityEnum = pgEnum("alert_severity", ["blocking", "warning", "info", "opportunity"]);
+export const aiProposalKindEnum = pgEnum("ai_proposal_kind", ["ocr", "coding", "transmission", "admin", "chat"]);
+export const humanDecisionEnum = pgEnum("human_decision", ["accepted", "edited", "rejected", "pending"]);
+export const tourStatusEnum = pgEnum("tour_status", ["draft", "published", "running", "closed"]);
+export const transmissionStatusEnum = pgEnum("transmission_status", ["draft", "validated"]);
+export const adminTaskStatusEnum = pgEnum("admin_task_status", ["open", "snoozed", "done"]);
+export const documentSourceEnum = pgEnum("invoice_source", ["manual", "import_csv"]);
+export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "paid", "rejected", "unpaid"]);
