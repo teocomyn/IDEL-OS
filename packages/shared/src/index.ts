@@ -9,3 +9,4 @@ export * from "./schemas/prescriber.js";
 export * from "./schemas/privacy.js";
 export * from "./schemas/transmission.js";
 export * from "./schemas/care-plan.js";
+export * from "./schemas/visit.js";

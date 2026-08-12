@@ -39,6 +39,7 @@ export default function HomePage() {
         </Link>
 
         <nav className="home-nav" aria-label="Navigation principale">
+          <Link href="/demo-aujourdhui">Aujourd’hui</Link>
           <Link href="/demo-ordonnance">Ordonnances</Link>
           <Link href="/demo-cotation">Cotation</Link>
           <Link href="/demo-transmissions">Transmissions</Link>

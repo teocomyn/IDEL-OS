@@ -17,6 +17,7 @@ import type { EncryptedValue } from "@idel-os/shared";
 import type { AuditSink, PatientRepository, StoredPatient } from "./patient-service.js";
 import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
 import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
+import type { StoredVisitLifecycle, VisitLifecycleRepository } from "./visit-service.js";
 
 export class DrizzlePatientRepository implements PatientRepository {
   public constructor(private readonly database: Database) {}
@@ -180,6 +181,53 @@ export class DrizzleCarePlanRepository implements CarePlanRepository {
         }));
         if (plannedActs.length > 0) await transaction.insert(visitActs).values(plannedActs);
       }
+    });
+  }
+}
+
+export class DrizzleVisitLifecycleRepository implements VisitLifecycleRepository {
+  public constructor(private readonly database: Database) {}
+
+  public async findById(organizationId: string, visitId: string): Promise<StoredVisitLifecycle | null> {
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const [visit] = await transaction
+        .select()
+        .from(visits)
+        .where(and(eq(visits.orgId, organizationId), eq(visits.id, visitId)))
+        .limit(1);
+      if (visit === undefined) return null;
+      const acts = await transaction
+        .select({ id: visitActs.id, performed: visitActs.performed })
+        .from(visitActs)
+        .where(and(eq(visitActs.orgId, organizationId), eq(visitActs.visitId, visitId)));
+      return {
+        id: visit.id,
+        organizationId: visit.orgId,
+        patientId: visit.patientId,
+        assignedUserId: visit.assignedUserId,
+        status: visit.status,
+        startedAt: visit.startedAt,
+        endedAt: visit.endedAt,
+        acts,
+      };
+    });
+  }
+
+  public async updateVisit(visit: StoredVisitLifecycle): Promise<void> {
+    await withOrganization(this.database, visit.organizationId, async (transaction) => {
+      await transaction
+        .update(visits)
+        .set({ status: visit.status, startedAt: visit.startedAt, endedAt: visit.endedAt })
+        .where(and(eq(visits.orgId, visit.organizationId), eq(visits.id, visit.id)));
+    });
+  }
+
+  public async setActPerformed(organizationId: string, visitActId: string, performed: boolean): Promise<void> {
+    await withOrganization(this.database, organizationId, async (transaction) => {
+      await transaction
+        .update(visitActs)
+        .set({ performed })
+        .where(and(eq(visitActs.orgId, organizationId), eq(visitActs.id, visitActId)));
     });
   }
 }

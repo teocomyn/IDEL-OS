@@ -1,6 +1,7 @@
 import type { AuditSink, PatientRepository, StoredPatient } from "./patient-service.js";
 import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
 import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
+import type { StoredVisitLifecycle, VisitLifecycleRepository } from "./visit-service.js";
 
 export class InMemoryPatientRepository implements PatientRepository {
   private readonly patients = new Map<string, StoredPatient>();
@@ -64,6 +65,29 @@ export class InMemoryCarePlanRepository implements CarePlanRepository {
 
   public async activate(plan: StoredCarePlanActivation): Promise<void> {
     this.plans.push(structuredClone(plan));
+    return Promise.resolve();
+  }
+}
+
+export class InMemoryVisitLifecycleRepository implements VisitLifecycleRepository {
+  public readonly visits = new Map<string, StoredVisitLifecycle>();
+
+  public async findById(organizationId: string, visitId: string): Promise<StoredVisitLifecycle | null> {
+    const visit = this.visits.get(`${organizationId}:${visitId}`);
+    return Promise.resolve(visit === undefined ? null : structuredClone(visit));
+  }
+
+  public async updateVisit(visit: StoredVisitLifecycle): Promise<void> {
+    this.visits.set(`${visit.organizationId}:${visit.id}`, structuredClone(visit));
+    return Promise.resolve();
+  }
+
+  public async setActPerformed(organizationId: string, visitActId: string, performed: boolean): Promise<void> {
+    for (const [key, visit] of this.visits) {
+      if (!key.startsWith(`${organizationId}:`)) continue;
+      const act = visit.acts.find(({ id }) => id === visitActId);
+      if (act !== undefined) act.performed = performed;
+    }
     return Promise.resolve();
   }
 }
