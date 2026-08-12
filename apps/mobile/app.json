@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "IDEL OS",
+    "slug": "idel-os",
+    "scheme": "idel-os",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true },
+    "web": { "bundler": "metro" }
+  }
+}
