@@ -99,8 +99,8 @@ function assertResult(result: CodingResult, scenario: Scenario): void {
 }
 
 describe("NGAP business scenarios", () => {
-  it("keeps the 40 reviewed scenarios as an explicit acceptance baseline", () => {
-    expect(scenarios).toHaveLength(40);
+  it("keeps the reviewed scenarios as an explicit acceptance baseline", () => {
+    expect(scenarios).toHaveLength(41);
   });
 
   for (const scenario of scenarios) {

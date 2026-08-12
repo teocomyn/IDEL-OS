@@ -1,9 +1,10 @@
 "use client";
 
 import { generateVisitSchedule, type PlannedVisit } from "@idel-os/routing";
-import { useMemo, useState } from "react";
+import { assessCaptureQuality, type CaptureQuality } from "@idel-os/ocr";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type Stage = "review" | "schedule" | "complete";
+type Stage = "capture" | "review" | "schedule" | "complete";
 type ReviewKey = "pansement" | "traitement" | "dates";
 
 const scheduleInput = {
@@ -84,7 +85,7 @@ function Icon({ name }: { name: "check" | "document" | "calendar" | "shield" | "
 }
 
 export function PrescriptionDemo() {
-  const [stage, setStage] = useState<Stage>("review");
+  const [stage, setStage] = useState<Stage>("capture");
   const [reviewed, setReviewed] = useState<Set<ReviewKey>>(new Set());
   const visits = useMemo(() => generateVisitSchedule(scheduleInput), []);
   const reviewComplete = reviewed.size === reviewItems.length;
@@ -110,10 +111,13 @@ export function PrescriptionDemo() {
       </header>
 
       <ol className="rx-steps" aria-label="Progression">
-        <Step active={stage === "review"} complete={stage !== "review"} index="01" label="Relire l’extraction" />
-        <Step active={stage === "schedule"} complete={stage === "complete"} index="02" label="Vérifier les passages" />
-        <Step active={stage === "complete"} complete={stage === "complete"} index="03" label="Ajouter au planning" />
+        <Step active={stage === "capture"} complete={stage !== "capture"} index="01" label="Scanner" />
+        <Step active={stage === "review"} complete={stage === "schedule" || stage === "complete"} index="02" label="Relire" />
+        <Step active={stage === "schedule"} complete={stage === "complete"} index="03" label="Planifier" />
+        <Step active={stage === "complete"} complete={stage === "complete"} index="04" label="Terminer" />
       </ol>
+
+      {stage === "capture" && <CapturePanel onContinue={() => setStage("review")} />}
 
       {stage === "review" && (
         <div className="rx-review-grid">
@@ -157,8 +161,99 @@ export function PrescriptionDemo() {
         <ScheduleReview visits={visits} onBack={() => setStage("review")} onConfirm={() => setStage("complete")} />
       )}
 
-      {stage === "complete" && <CompleteState visits={visits} onRestart={() => { setReviewed(new Set()); setStage("review"); }} />}
+      {stage === "complete" && <CompleteState visits={visits} onRestart={() => { setReviewed(new Set()); setStage("capture"); }} />}
     </div>
+  );
+}
+
+function CapturePanel({ onContinue }: { onContinue: () => void }) {
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [quality, setQuality] = useState<CaptureQuality | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+
+  useEffect(() => () => {
+    if (previewUrl !== null) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  async function selectFile(selected: File | undefined) {
+    if (selected === undefined) return;
+    setAnalyzing(true);
+    setFile(selected);
+    setZoom(1);
+    setRotation(0);
+    if (previewUrl !== null) URL.revokeObjectURL(previewUrl);
+    const nextPreview = selected.type.startsWith("image/") ? URL.createObjectURL(selected) : null;
+    setPreviewUrl(nextPreview);
+    try {
+      setQuality(await analyzeDocumentLocally(selected));
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  return (
+    <section className="rx-capture-panel">
+      <div className="rx-capture-intro">
+        <div>
+          <span className="rx-kicker">Scanner mobile · analyse locale</span>
+          <h2>Photographiez ou importez l’ordonnance.</h2>
+          <p>Le flou, la résolution et les reflets sont contrôlés dans ce navigateur. Dans cette démo, aucun fichier n’est envoyé ni conservé.</p>
+        </div>
+        <div className="rx-capture-actions">
+          <button className="rx-primary-button" onClick={() => cameraInputRef.current?.click()} type="button">Prendre une photo</button>
+          <label className="rx-secondary-button" htmlFor="rx-document-import">Importer photo ou PDF</label>
+          <input
+            ref={cameraInputRef}
+            id="rx-camera-input"
+            className="rx-file-input"
+            type="file"
+            accept="image/jpeg,image/png"
+            capture="environment"
+            onChange={(event) => void selectFile(event.target.files?.[0])}
+          />
+          <input id="rx-document-import" className="rx-file-input" type="file" accept="image/jpeg,image/png,application/pdf" onChange={(event) => void selectFile(event.target.files?.[0])} />
+        </div>
+      </div>
+
+      <div className="rx-capture-grid">
+        <div className="rx-capture-preview">
+          {previewUrl !== null ? (
+            <div className="rx-crop-frame"><img src={previewUrl} alt="Aperçu local de l’ordonnance" style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }} /></div>
+          ) : file?.type === "application/pdf" ? (
+            <div className="rx-pdf-preview"><Icon name="document" /><strong>{file.name}</strong><span>PDF · {formatFileSize(file.size)}</span></div>
+          ) : (
+            <button className="rx-capture-empty" onClick={() => cameraInputRef.current?.click()} type="button"><Icon name="document" /><strong>Cadrez les quatre bords</strong><span>Posez l’ordonnance à plat, sans ombre ni reflet.</span></button>
+          )}
+          {previewUrl !== null && (
+            <div className="rx-crop-controls">
+              <label>Recadrage <input aria-label="Zoom du recadrage" type="range" min="1" max="1.8" step="0.05" value={zoom} onChange={(event) => setZoom(Number(event.target.value))} /></label>
+              <button onClick={() => setRotation((value) => (value + 90) % 360)} type="button">Pivoter de 90°</button>
+            </div>
+          )}
+        </div>
+
+        <aside className="rx-quality-panel">
+          <span className="rx-kicker">Contrôle avant extraction</span>
+          {analyzing ? <p className="rx-analysis-state">Analyse de la netteté en cours…</p> : quality === null ? (
+            <ul className="rx-quality-placeholder"><li>Netteté suffisante</li><li>Document lisible et bien cadré</li><li>JPEG, PNG ou PDF · 15 Mo max.</li></ul>
+          ) : (
+            <>
+              <div className={`rx-quality-score ${quality.accepted ? "is-good" : "is-blocked"}`}><strong>{quality.score}/100</strong><span>{quality.accepted ? "Document exploitable" : "Nouvelle capture requise"}</span></div>
+              <ul className="rx-quality-results">
+                {quality.issues.length === 0 ? <li className="is-good"><Icon name="check" /> Netteté et format validés</li> : quality.issues.map((issue) => <li className={issue.severity === "blocking" ? "is-blocked" : "is-warning"} key={issue.code}>{issue.message}</li>)}
+              </ul>
+            </>
+          )}
+          <div className="rx-local-note"><Icon name="shield" /><span><strong>Zéro envoi dans la démo</strong>L’analyse d’image s’exécute uniquement sur votre appareil.</span></div>
+          <button className="rx-primary-button" disabled={!quality?.accepted} onClick={onContinue} type="button">Extraire les informations <Icon name="arrow" /></button>
+          <button className="rx-fixture-link" onClick={onContinue} type="button">Ou utiliser l’ordonnance fictive</button>
+        </aside>
+      </div>
+    </section>
   );
 }
 
@@ -257,4 +352,65 @@ function groupVisits(visits: PlannedVisit[]): Array<[string, PlannedVisit[]]> {
 function formatDay(value: string): string {
   return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
     .format(new Date(`${value}T12:00:00Z`));
+}
+
+async function analyzeDocumentLocally(file: File): Promise<CaptureQuality> {
+  if (file.type === "application/pdf") {
+    return assessCaptureQuality({ mimeType: file.type, sizeBytes: file.size });
+  }
+  if (!file.type.startsWith("image/")) {
+    return assessCaptureQuality({ mimeType: file.type, sizeBytes: file.size });
+  }
+
+  const bitmap = await createImageBitmap(file);
+  const originalWidth = bitmap.width;
+  const originalHeight = bitmap.height;
+  const scale = Math.min(1, 512 / Math.max(originalWidth, originalHeight));
+  const width = Math.max(2, Math.round(originalWidth * scale));
+  const height = Math.max(2, Math.round(originalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (context === null) throw new Error("Analyse d’image indisponible sur ce navigateur.");
+  context.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+  const pixels = context.getImageData(0, 0, width, height).data;
+  const grayscale = new Float64Array(width * height);
+  let glarePixels = 0;
+  for (let index = 0; index < grayscale.length; index += 1) {
+    const offset = index * 4;
+    const red = pixels[offset] ?? 0;
+    const green = pixels[offset + 1] ?? 0;
+    const blue = pixels[offset + 2] ?? 0;
+    grayscale[index] = 0.299 * red + 0.587 * green + 0.114 * blue;
+    if (red > 248 && green > 248 && blue > 248) glarePixels += 1;
+  }
+  const laplacianValues: number[] = [];
+  for (let y = 1; y < height - 1; y += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const center = y * width + x;
+      laplacianValues.push(
+        4 * (grayscale[center] ?? 0)
+        - (grayscale[center - 1] ?? 0)
+        - (grayscale[center + 1] ?? 0)
+        - (grayscale[center - width] ?? 0)
+        - (grayscale[center + width] ?? 0),
+      );
+    }
+  }
+  const mean = laplacianValues.reduce((sum, value) => sum + value, 0) / Math.max(1, laplacianValues.length);
+  const variance = laplacianValues.reduce((sum, value) => sum + (value - mean) ** 2, 0) / Math.max(1, laplacianValues.length);
+  return assessCaptureQuality({
+    mimeType: file.type,
+    sizeBytes: file.size,
+    width: originalWidth,
+    height: originalHeight,
+    laplacianVariance: variance,
+    glareRatio: glarePixels / grayscale.length,
+  });
+}
+
+function formatFileSize(sizeBytes: number): string {
+  return `${(sizeBytes / 1024 / 1024).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo`;
 }

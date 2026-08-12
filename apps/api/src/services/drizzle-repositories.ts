@@ -6,6 +6,7 @@ import {
   carePlans,
   patients,
   prescriptions,
+  prescriptionItems,
   transmissions,
   visitActs,
   visits,
@@ -18,6 +19,7 @@ import type { AuditSink, PatientRepository, StoredPatient } from "./patient-serv
 import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
 import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
 import type { StoredVisitLifecycle, VisitLifecycleRepository } from "./visit-service.js";
+import type { PrescriptionRepository, StoredPrescription } from "./prescription-service.js";
 
 export class DrizzlePatientRepository implements PatientRepository {
   public constructor(private readonly database: Database) {}
@@ -230,6 +232,135 @@ export class DrizzleVisitLifecycleRepository implements VisitLifecycleRepository
         .where(and(eq(visitActs.orgId, organizationId), eq(visitActs.id, visitActId)));
     });
   }
+}
+
+type PrescriptionExtractionEnvelope = Pick<StoredPrescription, "extraction" | "captureQuality" | "reviews">;
+
+export class DrizzlePrescriptionRepository implements PrescriptionRepository {
+  public constructor(private readonly database: Database) {}
+
+  public async create(prescription: StoredPrescription): Promise<void> {
+    await withOrganization(this.database, prescription.organizationId, async (transaction) => {
+      await transaction.insert(prescriptions).values({
+        id: prescription.id,
+        orgId: prescription.organizationId,
+        patientId: prescription.patientId,
+        source: prescription.source,
+        originalFileUrl: prescription.objectKey,
+        prescribedAt: prescription.prescribedAt,
+        validFrom: prescription.validFrom,
+        validUntil: prescription.validUntil,
+        isRenewal: prescription.isRenewal,
+        rawOcrTextEnc: prescription.rawOcrTextEnc,
+        extractionJson: toExtractionEnvelope(prescription),
+        extractionConfidence: String(prescription.extractionConfidence),
+        status: prescription.status,
+      });
+      await transaction.insert(prescriptionItems).values(prescription.items.map((item) => ({
+        id: item.id,
+        orgId: prescription.organizationId,
+        prescriptionId: prescription.id,
+        rawText: item.rawText,
+        actType: item.actType,
+        description: item.description,
+        frequencyJson: item.frequency,
+        durationDays: item.durationDays,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        constraintsJson: item.constraints,
+        extractionConfidence: String(item.extractionConfidence),
+        needsReview: true,
+      })));
+    });
+  }
+
+  public async findById(organizationId: string, prescriptionId: string): Promise<StoredPrescription | null> {
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const [prescription] = await transaction
+        .select()
+        .from(prescriptions)
+        .where(and(eq(prescriptions.orgId, organizationId), eq(prescriptions.id, prescriptionId)))
+        .limit(1);
+      if (prescription === undefined || prescription.rawOcrTextEnc === null || prescription.originalFileUrl === null) {
+        return null;
+      }
+      const items = await transaction
+        .select()
+        .from(prescriptionItems)
+        .where(and(
+          eq(prescriptionItems.orgId, organizationId),
+          eq(prescriptionItems.prescriptionId, prescriptionId),
+        ));
+      const envelope = prescription.extractionJson as PrescriptionExtractionEnvelope;
+      return {
+        id: prescription.id,
+        organizationId: prescription.orgId,
+        patientId: prescription.patientId,
+        source: prescription.source,
+        objectKey: prescription.originalFileUrl,
+        prescribedAt: prescription.prescribedAt,
+        validFrom: prescription.validFrom,
+        validUntil: prescription.validUntil,
+        isRenewal: prescription.isRenewal,
+        rawOcrTextEnc: prescription.rawOcrTextEnc as EncryptedValue,
+        extraction: envelope.extraction,
+        captureQuality: envelope.captureQuality,
+        extractionConfidence: Number(prescription.extractionConfidence ?? 0),
+        status: prescription.status,
+        validatedByUserId: prescription.validatedByUserId,
+        validatedAt: prescription.validatedAt,
+        reviews: envelope.reviews,
+        items: items.map((item) => ({
+          id: item.id,
+          rawText: item.rawText,
+          actType: item.actType,
+          description: item.description,
+          frequency: item.frequencyJson as Record<string, unknown>,
+          durationDays: item.durationDays,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          constraints: item.constraintsJson as Record<string, unknown>,
+          extractionConfidence: Number(item.extractionConfidence ?? 0),
+        })),
+      };
+    });
+  }
+
+  public async update(prescription: StoredPrescription): Promise<void> {
+    await withOrganization(this.database, prescription.organizationId, async (transaction) => {
+      await transaction
+        .update(prescriptions)
+        .set({
+          status: prescription.status,
+          validatedByUserId: prescription.validatedByUserId,
+          validatedAt: prescription.validatedAt,
+          extractionJson: toExtractionEnvelope(prescription),
+        })
+        .where(and(
+          eq(prescriptions.orgId, prescription.organizationId),
+          eq(prescriptions.id, prescription.id),
+        ));
+      for (const item of prescription.items) {
+        await transaction
+          .update(prescriptionItems)
+          .set({ needsReview: prescription.status !== "validated" })
+          .where(and(
+            eq(prescriptionItems.orgId, prescription.organizationId),
+            eq(prescriptionItems.id, item.id),
+          ));
+      }
+    });
+  }
+}
+
+function toExtractionEnvelope(
+  prescription: StoredPrescription,
+): PrescriptionExtractionEnvelope {
+  return {
+    extraction: prescription.extraction,
+    captureQuality: prescription.captureQuality,
+    reviews: prescription.reviews,
+  };
 }
 
 function toDatabasePatient(patient: StoredPatient) {

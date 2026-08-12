@@ -10,6 +10,7 @@ import {
   DrizzleAuditSink,
   DrizzleCarePlanRepository,
   DrizzlePatientRepository,
+  DrizzlePrescriptionRepository,
   DrizzleTransmissionRepository,
   DrizzleVisitLifecycleRepository,
 } from "./services/drizzle-repositories.js";
@@ -18,6 +19,7 @@ import { PrivacyService } from "./services/privacy-service.js";
 import { TransmissionService } from "./services/transmission-service.js";
 import { CarePlanService } from "./services/care-plan-service.js";
 import { VisitService } from "./services/visit-service.js";
+import { PrescriptionService } from "./services/prescription-service.js";
 
 const environment = parseEnvironment(process.env);
 const { db } = createDatabase(environment.DATABASE_URL);
@@ -63,6 +65,11 @@ const server = createServer({
         await patientService.deactivate(organizationId, patientId, actor);
       },
     }),
+    prescriptionService: new PrescriptionService(
+      new DrizzlePrescriptionRepository(db),
+      auditSink,
+      encryptionService,
+    ),
   },
 });
 

@@ -1,6 +1,45 @@
 [
   {
     "id": "pansement-non-chirurgical",
+    "label": "Autre pansement",
+    "letterKey": "AMI",
+    "coefficient": 2,
+    "tags": ["pansement"],
+    "maxQuantityPerVisit": null,
+    "status": "TO_VERIFY",
+    "active": true,
+    "validFrom": "2026-05-28",
+    "validUntil": "2026-06-20",
+    "source": {"url":"https://www.ameli.fr/sites/default/files/Documents/NGAP-28052026.pdf","title":"NGAP version du 28 mai 2026","retrievedAt":"2026-08-12","reference":"Titre XVI, chapitre I, article 2"}
+  },
+  {
+    "id": "pansement-chirurgical-simple",
+    "label": "Autre pansement",
+    "letterKey": "AMI",
+    "coefficient": 2,
+    "tags": ["pansement"],
+    "maxQuantityPerVisit": null,
+    "status": "TO_VERIFY",
+    "active": true,
+    "validFrom": "2026-05-28",
+    "validUntil": "2026-06-20",
+    "source": {"url":"https://www.ameli.fr/sites/default/files/Documents/NGAP-28052026.pdf","title":"NGAP version du 28 mai 2026","retrievedAt":"2026-08-12","reference":"Titre XVI, chapitre I, article 2"}
+  },
+  {
+    "id": "administration-medicamenteuse",
+    "label": "Administration et surveillance d’une thérapeutique orale à domicile",
+    "letterKey": "AMI",
+    "coefficient": 1.2,
+    "tags": ["surveillance_article_10"],
+    "maxQuantityPerVisit": 1,
+    "status": "TO_VERIFY",
+    "active": true,
+    "validFrom": "2026-05-28",
+    "validUntil": "2026-06-20",
+    "source": {"url":"https://www.ameli.fr/sites/default/files/Documents/NGAP-28052026.pdf","title":"NGAP version du 28 mai 2026","retrievedAt":"2026-08-12","reference":"Titre XVI, chapitre I, article 10"}
+  },
+  {
+    "id": "pansement-non-chirurgical",
     "label": "Pansement de plaie non chirurgicale",
     "letterKey": "AMI",
     "coefficient": 2.02,

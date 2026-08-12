@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@idel-os/ngap-engine": "workspace:*",
+    "@idel-os/ocr": "workspace:*",
     "@idel-os/routing": "workspace:*",
     "@idel-os/ui": "workspace:*",
     "next": "^16.3.0",

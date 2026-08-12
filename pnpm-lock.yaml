@@ -44,6 +44,9 @@ importers:
       '@idel-os/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@idel-os/ocr':
+        specifier: workspace:*
+        version: link:../../packages/ocr
       '@idel-os/routing':
         specifier: workspace:*
         version: link:../../packages/routing
@@ -112,6 +115,9 @@ importers:
       '@idel-os/ngap-engine':
         specifier: workspace:*
         version: link:../../packages/ngap-engine
+      '@idel-os/ocr':
+        specifier: workspace:*
+        version: link:../../packages/ocr
       '@idel-os/routing':
         specifier: workspace:*
         version: link:../../packages/routing
@@ -163,7 +169,15 @@ importers:
         specifier: ^4.20.6
         version: 4.23.12
 
-  packages/llm: {}
+  packages/llm:
+    dependencies:
+      '@idel-os/phi-redaction':
+        specifier: workspace:*
+        version: link:../phi-redaction
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.1.10
+        version: 4.1.10(vitest@4.1.10)
 
   packages/ngap-engine:
     dependencies:
@@ -175,9 +189,17 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
 
-  packages/ocr: {}
+  packages/ocr:
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.1.10
+        version: 4.1.10(vitest@4.1.10)
 
-  packages/phi-redaction: {}
+  packages/phi-redaction:
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^4.1.10
+        version: 4.1.10(vitest@4.1.10)
 
   packages/routing:
     dependencies:

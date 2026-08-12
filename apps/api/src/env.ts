@@ -9,6 +9,10 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url(),
   WEB_ORIGIN: z.url(),
+  DATA_MODE: z.enum(["synthetic", "health"]).default("synthetic"),
+  HDS_PROVIDER: z.string().min(1).optional(),
+  HDS_CERTIFICATE_REFERENCE: z.string().min(1).optional(),
+  HDS_REGION: z.string().min(1).optional(),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
 });
 
@@ -19,6 +23,16 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApiEnvironment {
   if (environment.NODE_ENV === "production") {
     const key = Buffer.from(environment.IDEL_MASTER_KEY_BASE64, "base64");
     if (key.length !== 32) throw new Error("IDEL_MASTER_KEY_BASE64 must decode to 32 bytes.");
+    if (environment.DATA_MODE === "health") {
+      const missing = (["HDS_PROVIDER", "HDS_CERTIFICATE_REFERENCE", "HDS_REGION"] as const)
+        .filter((name) => environment[name] === undefined);
+      if (missing.length > 0) {
+        throw new Error(`Production health mode requires: ${missing.join(", ")}.`);
+      }
+      if (environment.WEB_ORIGIN.includes("vercel.app")) {
+        throw new Error("Le traitement de données de santé est interdit sur le déploiement Vercel public.");
+      }
+    }
   }
   return environment;
 }

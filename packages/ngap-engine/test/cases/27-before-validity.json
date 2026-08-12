@@ -1,1 +1,1 @@
-{"id":"NGAP-027","description":"Un acte hors de sa période de validité bloque la proposition","input":{"date":"2026-06-20T08:00:00.000Z"},"expected":{"totalCents":0,"alertCodes":["NO_CATALOG_VERSION"]}}
+{"id":"NGAP-027","description":"Un acte hors de sa période de validité bloque la proposition","input":{"date":"2026-05-27T08:00:00.000Z"},"expected":{"totalCents":0,"alertCodes":["NO_CATALOG_VERSION"]}}

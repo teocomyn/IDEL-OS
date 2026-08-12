@@ -10,6 +10,9 @@ import {
   carePlanActivationInputSchema,
   visitActCompletionSchema,
   visitReferenceSchema,
+  prescriptionDraftInputSchema,
+  prescriptionReferenceSchema,
+  prescriptionValidationInputSchema,
 } from "@idel-os/shared";
 
 import type { AppContext } from "./context/app-context.js";
@@ -133,11 +136,32 @@ const visitRouter = t.router({
   ),
 });
 
+const prescriptionRouter = t.router({
+  getReview: protectedProcedure.input(prescriptionReferenceSchema).query(({ ctx, input }) =>
+    ctx.prescriptionService.getReview(ctx.professional.organizationId, input.prescriptionId),
+  ),
+  createDraft: protectedProcedure.input(prescriptionDraftInputSchema).mutation(({ ctx, input }) =>
+    ctx.prescriptionService.createDraft({
+      organizationId: ctx.professional.organizationId,
+      actor: { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    }),
+  ),
+  validate: protectedProcedure.input(prescriptionValidationInputSchema).mutation(({ ctx, input }) =>
+    ctx.prescriptionService.validate({
+      organizationId: ctx.professional.organizationId,
+      actor: { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    }),
+  ),
+});
+
 export const appRouter = t.router({
   patient: patientRouter,
   privacy: privacyRouter,
   transmission: transmissionRouter,
   carePlan: carePlanRouter,
   visit: visitRouter,
+  prescription: prescriptionRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -1,0 +1,33 @@
+{
+  "retrievedAt": "2026-08-12",
+  "selectionPolicy": "La version applicable est sélectionnée selon la date du soin.",
+  "documents": [
+    {
+      "id": "ngap-2026-05-28",
+      "kind": "ngap",
+      "status": "historical",
+      "validFrom": "2026-05-28",
+      "validUntil": "2026-06-20",
+      "url": "https://www.ameli.fr/sites/default/files/Documents/NGAP-28052026.pdf",
+      "title": "NGAP version du 28 mai 2026"
+    },
+    {
+      "id": "ngap-2026-06-21",
+      "kind": "ngap",
+      "status": "current",
+      "validFrom": "2026-06-21",
+      "validUntil": null,
+      "url": "https://www.ameli.fr/sites/default/files/Documents/NGAP-21062026.pdf",
+      "title": "NGAP version du 21 juin 2026"
+    },
+    {
+      "id": "avenant-11-2026-05-06",
+      "kind": "convention",
+      "status": "current",
+      "validFrom": "2026-05-06",
+      "validUntil": null,
+      "url": "https://www.ameli.fr/sites/default/files/Documents/IDEL-avenant11-JORF.pdf",
+      "title": "Avenant 11 à la convention nationale des infirmiers"
+    }
+  ]
+}

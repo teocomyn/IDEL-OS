@@ -2,6 +2,7 @@ import type { AuditSink, PatientRepository, StoredPatient } from "./patient-serv
 import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
 import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
 import type { StoredVisitLifecycle, VisitLifecycleRepository } from "./visit-service.js";
+import type { PrescriptionRepository, StoredPrescription } from "./prescription-service.js";
 
 export class InMemoryPatientRepository implements PatientRepository {
   private readonly patients = new Map<string, StoredPatient>();
@@ -89,5 +90,22 @@ export class InMemoryVisitLifecycleRepository implements VisitLifecycleRepositor
       if (act !== undefined) act.performed = performed;
     }
     return Promise.resolve();
+  }
+}
+
+export class InMemoryPrescriptionRepository implements PrescriptionRepository {
+  private readonly prescriptions = new Map<string, StoredPrescription>();
+
+  public async create(prescription: StoredPrescription): Promise<void> {
+    this.prescriptions.set(`${prescription.organizationId}:${prescription.id}`, structuredClone(prescription));
+  }
+
+  public async findById(organizationId: string, prescriptionId: string): Promise<StoredPrescription | null> {
+    const prescription = this.prescriptions.get(`${organizationId}:${prescriptionId}`);
+    return prescription === undefined ? null : structuredClone(prescription);
+  }
+
+  public async update(prescription: StoredPrescription): Promise<void> {
+    this.prescriptions.set(`${prescription.organizationId}:${prescription.id}`, structuredClone(prescription));
   }
 }

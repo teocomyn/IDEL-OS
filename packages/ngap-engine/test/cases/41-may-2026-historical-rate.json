@@ -1,0 +1,9 @@
+{
+  "id": "41-may-2026-historical-rate",
+  "description": "un soin du 28 mai utilise le coefficient historique sans appliquer rétroactivement le 21 juin",
+  "input": {
+    "date": "2026-05-28T08:00:00.000Z",
+    "acts": [{"catalogId":"pansement-non-chirurgical","quantity":1,"tags":[]}]
+  },
+  "expected": {"totalCents":630}
+}
