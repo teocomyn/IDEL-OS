@@ -8,12 +8,14 @@ import { parseEnvironment } from "./env.js";
 import { createServer } from "./server.js";
 import {
   DrizzleAuditSink,
+  DrizzleCarePlanRepository,
   DrizzlePatientRepository,
   DrizzleTransmissionRepository,
 } from "./services/drizzle-repositories.js";
 import { PatientService } from "./services/patient-service.js";
 import { PrivacyService } from "./services/privacy-service.js";
 import { TransmissionService } from "./services/transmission-service.js";
+import { CarePlanService } from "./services/care-plan-service.js";
 
 const environment = parseEnvironment(process.env);
 const { db } = createDatabase(environment.DATABASE_URL);
@@ -46,6 +48,7 @@ const server = createServer({
   authHandler: auth.handler,
   services: {
     patientService,
+    carePlanService: new CarePlanService(new DrizzleCarePlanRepository(db), auditSink),
     transmissionService: new TransmissionService(
       new DrizzleTransmissionRepository(db),
       auditSink,

@@ -2,8 +2,13 @@ import { and, eq } from "drizzle-orm";
 
 import {
   auditLog,
+  carePlanItems,
+  carePlans,
   patients,
+  prescriptions,
   transmissions,
+  visitActs,
+  visits,
   type Database,
   withOrganization,
 } from "@idel-os/db";
@@ -11,6 +16,7 @@ import type { EncryptedValue } from "@idel-os/shared";
 
 import type { AuditSink, PatientRepository, StoredPatient } from "./patient-service.js";
 import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
+import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
 
 export class DrizzlePatientRepository implements PatientRepository {
   public constructor(private readonly database: Database) {}
@@ -100,6 +106,80 @@ export class DrizzleTransmissionRepository implements TransmissionRepository {
         .update(transmissions)
         .set({ status: transmission.status, validatedAt: transmission.validatedAt })
         .where(and(eq(transmissions.orgId, transmission.organizationId), eq(transmissions.id, transmission.id)));
+    });
+  }
+}
+
+export class DrizzleCarePlanRepository implements CarePlanRepository {
+  public constructor(private readonly database: Database) {}
+
+  public async isValidatedPrescription(
+    organizationId: string,
+    prescriptionId: string,
+    patientId: string,
+  ): Promise<boolean> {
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const [prescription] = await transaction
+        .select({ id: prescriptions.id })
+        .from(prescriptions)
+        .where(and(
+          eq(prescriptions.orgId, organizationId),
+          eq(prescriptions.id, prescriptionId),
+          eq(prescriptions.patientId, patientId),
+          eq(prescriptions.status, "validated"),
+        ))
+        .limit(1);
+      return prescription !== undefined;
+    });
+  }
+
+  public async activate(plan: StoredCarePlanActivation): Promise<void> {
+    await withOrganization(this.database, plan.organizationId, async (transaction) => {
+      await transaction.insert(carePlans).values({
+        id: plan.carePlanId,
+        orgId: plan.organizationId,
+        patientId: plan.patientId,
+        prescriptionId: plan.prescriptionId,
+        name: plan.name,
+        status: "active",
+        startsAt: plan.startDate,
+        endsAt: plan.endDate,
+      });
+      await transaction.insert(carePlanItems).values(plan.items.map((item) => ({
+        id: item.id,
+        orgId: plan.organizationId,
+        carePlanId: plan.carePlanId,
+        prescriptionItemId: item.prescriptionItemId,
+        actCatalogId: item.actCatalogId,
+        estimatedDurationMin: item.estimatedDurationMin,
+        requiresTwoNurses: item.requiresTwoNurses,
+      })));
+      if (plan.visits.length > 0) {
+        await transaction.insert(visits).values(plan.visits.map((visit) => ({
+          id: visit.id,
+          orgId: plan.organizationId,
+          patientId: visit.patientId,
+          carePlanId: visit.carePlanId,
+          scheduledAt: visit.scheduledAt,
+          timeWindowStart: visit.timeWindowStart,
+          timeWindowEnd: visit.timeWindowEnd,
+          estimatedDurationMin: visit.estimatedDurationMin,
+          status: "planned" as const,
+        })));
+        const actCatalogByItem = new Map(plan.items.map((item) => [item.id, item.actCatalogId]));
+        const plannedActs = plan.visits.flatMap((visit) => visit.carePlanItemIds.map((carePlanItemId) => {
+          const actCatalogId = actCatalogByItem.get(carePlanItemId);
+          if (actCatalogId === undefined) throw new Error("Acte de plan de soins introuvable.");
+          return {
+            orgId: plan.organizationId,
+            visitId: visit.id,
+            carePlanItemId,
+            actCatalogId,
+            performed: false,
+          };
+        }));
+        if (plannedActs.length > 0) await transaction.insert(visitActs).values(plannedActs);
+      }
     });
   }
 }

@@ -39,7 +39,8 @@ export default function HomePage() {
         </Link>
 
         <nav className="home-nav" aria-label="Navigation principale">
-          <a href="#fonctionnement">Fonctionnement</a>
+          <Link href="/demo-ordonnance">Ordonnances</Link>
+          <Link href="/demo-cotation">Cotation</Link>
           <Link href="/demo-transmissions">Transmissions</Link>
         </nav>
 
@@ -68,8 +69,8 @@ export default function HomePage() {
           </p>
 
           <div className="home-actions">
-            <Link className="home-primary-button" href="/demo-cotation">
-              Tester avec un cas fictif
+            <Link className="home-primary-button" href="/demo-ordonnance">
+              Transformer une ordonnance
               <ArrowIcon />
             </Link>
             <Link className="home-text-button" href="/demo-transmissions">Voir la relève intelligente</Link>

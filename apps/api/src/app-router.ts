@@ -7,6 +7,7 @@ import {
   privacyRequestSchema,
   transmissionDraftInputSchema,
   transmissionReferenceSchema,
+  carePlanActivationInputSchema,
 } from "@idel-os/shared";
 
 import type { AppContext } from "./context/app-context.js";
@@ -94,9 +95,22 @@ const transmissionRouter = t.router({
     ),
 });
 
+const carePlanRouter = t.router({
+  activate: protectedProcedure
+    .input(carePlanActivationInputSchema)
+    .mutation(({ ctx, input }) =>
+      ctx.carePlanService.activate({
+        organizationId: ctx.professional.organizationId,
+        actor: { userId: ctx.professional.userId, role: ctx.professional.role },
+        input,
+      }),
+    ),
+});
+
 export const appRouter = t.router({
   patient: patientRouter,
   privacy: privacyRouter,
   transmission: transmissionRouter,
+  carePlan: carePlanRouter,
 });
 export type AppRouter = typeof appRouter;

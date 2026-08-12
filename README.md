@@ -41,7 +41,10 @@ Le test RLS utilise Testcontainers et requiert un daemon Docker actif. Sur macOS
 - chiffrement AES-256-GCM par organisation ;
 - Better Auth, email/mot de passe, HIBP et TOTP ;
 - patients, exports RGPD JSON/PDF et socle offline ;
-- écrans minimaux Next.js et Expo.
+- moteur NGAP déterministe avec règles datées et scénarios de test ;
+- transmissions structurées, chiffrées et soumises à validation humaine ;
+- génération déterministe des passages depuis un plan de soins, avec regroupement des actes compatibles ;
+- démonstrations Next.js responsive pour l’ordonnance, la cotation et les transmissions.
 
-Le moteur NGAP, l’OCR et les appels LLM ne sont volontairement pas implémentés avant leurs
-sprints dédiés et leur validation métier.
+L’OCR réel et les appels LLM restent désactivés : ils ne seront raccordés qu’à une infrastructure
+HDS avec redaction des données identifiantes et jeux d’évaluation dédiés.

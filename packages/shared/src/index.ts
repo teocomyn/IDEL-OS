@@ -8,3 +8,4 @@ export * from "./schemas/patient.js";
 export * from "./schemas/prescriber.js";
 export * from "./schemas/privacy.js";
 export * from "./schemas/transmission.js";
+export * from "./schemas/care-plan.js";

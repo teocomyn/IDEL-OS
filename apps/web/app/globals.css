@@ -451,3 +451,164 @@ p { line-height: 1.55; color: var(--muted); }
 
 @media (max-width: 760px) { .shell { padding: 18px; } .hero, .demo-grid { grid-template-columns: 1fr; } .topbar { margin-bottom: 28px; } .demo-heading { display: block; } .demo-heading h1, h1 { font-size: 46px; } .settings-card, .result-card { padding: 20px; } .result-topline { align-items: end; } .total strong { font-size: 29px; } }
 @media (prefers-color-scheme: dark) { :root { color-scheme: dark; --ink:#eef8f6; --muted:#b2c5c1; --canvas:#091719; --surface:#102528; --primary:#37a9ac; --primary-dark:#278f93; --border:#2d484b; } .field input,.field select,.button.secondary,.patient { background:var(--surface); } .notice,.badge { background:#153336; } .home-shell { color-scheme: light; } }
+
+/* Prescription to care plan demo */
+.rx-shell { min-height: 100vh; color-scheme: light; color: #123336; background: #f3f7f5; }
+.rx-topbar { height: 68px; padding: 0 28px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; border-bottom: 1px solid #dce6e3; background: rgba(255,255,255,.92); }
+.rx-brand { display: inline-flex; align-items: center; gap: 10px; width: max-content; font-size: 17px; font-weight: 900; letter-spacing: -.04em; }
+.rx-logo { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; color: white; background: #0b7779; font-size: 10px; box-shadow: 0 5px 15px rgba(12,119,121,.17); }
+.rx-demo-badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border-radius: 999px; color: #5d7375; background: #eef5f3; font-size: 11px; font-weight: 750; }
+.rx-demo-badge i { width: 7px; height: 7px; border-radius: 50%; background: #3cb5a7; box-shadow: 0 0 0 3px rgba(60,181,167,.13); }
+.rx-exit { justify-self: end; color: #607678; font-size: 12px; font-weight: 700; }
+.rx-workspace { width: min(1240px, calc(100% - 48px)); margin: 0 auto; padding: 48px 0 70px; }
+.rx-heading { display: flex; align-items: end; justify-content: space-between; gap: 40px; }
+.rx-kicker { color: #21827f; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.rx-heading h1 { max-width: none; margin: 8px 0 13px; color: #123336; font-size: clamp(38px,4vw,58px); line-height: 1; letter-spacing: -.05em; }
+.rx-heading p { max-width: 660px; margin: 0; color: #687f81; font-size: 15px; }
+.rx-safety { max-width: 280px; padding: 13px 15px; display: flex; align-items: center; gap: 11px; border: 1px solid #d7e8e3; border-radius: 13px; color: #367b76; background: #edf8f5; }
+.rx-safety svg { flex: 0 0 auto; width: 21px; height: 21px; }
+.rx-safety span { display: grid; gap: 3px; color: #718989; font-size: 9px; }
+.rx-safety strong { color: #315f5e; font-size: 10px; }
+.rx-steps { margin: 34px 0 24px; padding: 0; display: grid; grid-template-columns: repeat(3,1fr); list-style: none; border: 1px solid #dce7e4; border-radius: 16px; background: rgba(255,255,255,.7); overflow: hidden; }
+.rx-steps li { min-height: 68px; padding: 0 22px; display: flex; align-items: center; gap: 11px; border-right: 1px solid #e3ece9; color: #879999; }
+.rx-steps li:last-child { border-right: 0; }
+.rx-steps li > span { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 9px; color: #78908f; background: #edf3f1; font-size: 9px; font-weight: 900; }
+.rx-steps li svg { width: 15px; height: 15px; }
+.rx-steps li strong { font-size: 11px; }
+.rx-steps li.is-active { color: #236d69; background: #f2faf7; }
+.rx-steps li.is-active > span { color: white; background: #0c8381; }
+.rx-steps li.is-complete > span { color: #1c7771; background: #ddf1ec; }
+.rx-review-grid { display: grid; grid-template-columns: minmax(330px,.7fr) minmax(0,1.3fr); gap: 22px; align-items: start; }
+.rx-document-column, .rx-review-panel, .rx-schedule-panel, .rx-complete { border: 1px solid #dce7e4; border-radius: 20px; background: white; box-shadow: 0 14px 40px rgba(18,73,71,.055); }
+.rx-document-column { padding: 16px; background: #e9efed; }
+.rx-document-toolbar { padding: 0 2px 13px; display: flex; justify-content: space-between; color: #67807f; font-size: 9px; font-weight: 800; }
+.rx-document-toolbar span { display: inline-flex; align-items: center; gap: 7px; }
+.rx-document-toolbar svg { width: 15px; height: 15px; }
+.rx-document { position: relative; min-height: 565px; padding: 38px 38px 32px; overflow: hidden; color: #303a39; background: #fffefb; box-shadow: 0 8px 25px rgba(44,61,58,.12); font-family: Georgia,serif; }
+.rx-document-logo { padding-bottom: 15px; border-bottom: 1px solid #d9d7cf; color: #215f5c; font: 700 11px ui-sans-serif,system-ui; text-transform: uppercase; letter-spacing: .08em; }
+.rx-document-prescriber { margin-top: 20px; display: grid; gap: 4px; font-size: 10px; line-height: 1.4; }
+.rx-document-prescriber strong { font-size: 13px; }
+.rx-document-date { margin-top: 25px; text-align: right; font-size: 10px; }
+.rx-document-patient { margin-top: 32px; font-size: 11px; line-height: 1.6; }
+.rx-document-care { margin-top: 28px; font-size: 12px; line-height: 1.65; }
+.rx-document-care p { color: #303a39; }
+.rx-document-signature { margin-top: 28px; text-align: right; color: #466865; font-size: 11px; font-style: italic; }
+.rx-document-watermark { position: absolute; right: -32px; bottom: 62px; padding: 8px 40px; transform: rotate(-28deg); color: rgba(133,71,58,.3); border: 2px solid rgba(133,71,58,.18); font: 900 11px ui-sans-serif,system-ui; letter-spacing: .12em; }
+.rx-local-note { margin-top: 13px; padding: 11px 12px; display: flex; align-items: center; gap: 9px; border-radius: 11px; color: #45807b; background: #dcece8; }
+.rx-local-note svg { flex: 0 0 auto; width: 18px; height: 18px; }
+.rx-local-note span { display: grid; gap: 2px; color: #66827f; font-size: 8px; }
+.rx-local-note strong { color: #326a66; font-size: 9px; }
+.rx-review-panel { padding: 27px; }
+.rx-panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.rx-panel-heading h2, .rx-schedule-hero h2, .rx-complete h2 { margin: 5px 0 0; color: #16383a; font-size: 25px; line-height: 1.1; letter-spacing: -.035em; }
+.rx-ai-pill { padding: 7px 9px; display: inline-flex; align-items: center; gap: 5px; border-radius: 99px; color: #257771; background: #e4f3ef; font-size: 8px; font-weight: 850; }
+.rx-ai-pill svg { width: 13px; height: 13px; }
+.rx-patient-summary { margin-top: 24px; padding: 13px; display: flex; align-items: center; gap: 11px; border-radius: 13px; background: #f3f7f6; }
+.rx-avatar { display: grid; place-items: center; width: 39px; height: 39px; border-radius: 11px; color: #1e7874; background: #dcefeb; font-size: 11px; font-weight: 900; }
+.rx-patient-summary > span:last-child { display: grid; gap: 3px; }
+.rx-patient-summary strong { font-size: 11px; }
+.rx-patient-summary small { color: #7a8e8f; font-size: 9px; }
+.rx-review-list { margin-top: 18px; display: grid; gap: 10px; }
+.rx-review-item { width: 100%; min-height: 94px; padding: 14px; display: grid; grid-template-columns: 31px 1fr auto; align-items: center; gap: 12px; border: 1px solid #dce7e4; border-radius: 13px; color: #173b3d; background: white; text-align: left; cursor: pointer; transition: border-color .18s,background .18s,transform .18s; }
+.rx-review-item:hover { transform: translateY(-1px); border-color: #9ccbc4; }
+.rx-review-item.is-reviewed { border-color: #9dcdc5; background: #f2faf7; }
+.rx-review-check { display: grid; place-items: center; width: 31px; height: 31px; border: 1px solid #cddbd8; border-radius: 10px; color: transparent; background: #f7faf9; }
+.rx-review-check svg { width: 17px; height: 17px; }
+.rx-review-item.is-reviewed .rx-review-check { color: white; border-color: #0d8984; background: #0d8984; }
+.rx-review-copy { min-width: 0; display: grid; gap: 4px; }
+.rx-review-copy small { color: #34827e; font-size: 8px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+.rx-review-copy strong { font-size: 12px; line-height: 1.35; }
+.rx-review-copy > span { color: #718687; font-size: 9px; }
+.rx-confidence { min-width: 55px; padding: 7px 8px; display: grid; gap: 2px; border-radius: 9px; color: #1e7d74; background: #e6f4f0; font-size: 10px; font-weight: 900; text-align: center; }
+.rx-confidence small { color: #73918e; font-size: 6px; font-weight: 750; text-transform: uppercase; }
+.rx-review-footer { margin-top: 20px; padding-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid #e4ece9; }
+.rx-review-footer > span { color: #718687; font-size: 9px; }
+.rx-primary-button, .rx-secondary-button { min-height: 48px; padding: 0 17px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; font-size: 10px; font-weight: 850; cursor: pointer; }
+.rx-primary-button { border: 0; color: white; background: #0b7f7f; box-shadow: 0 8px 20px rgba(11,127,127,.16); }
+.rx-primary-button svg, .rx-secondary-button svg { width: 15px; height: 15px; }
+.rx-primary-button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+.rx-secondary-button { border: 1px solid #cbd9d6; color: #496b6c; background: white; }
+.rx-schedule-panel { padding: 28px; }
+.rx-schedule-hero { display: flex; align-items: end; justify-content: space-between; gap: 30px; }
+.rx-schedule-hero > div:first-child p { max-width: 630px; margin: 10px 0 0; color: #6c8283; font-size: 11px; }
+.rx-metrics { display: flex; gap: 7px; }
+.rx-metrics > span { min-width: 86px; padding: 11px; display: grid; gap: 3px; border-radius: 11px; color: #788c8d; background: #f1f6f4; font-size: 8px; text-align: center; }
+.rx-metrics strong { color: #1b5554; font-size: 16px; }
+.rx-schedule-content { margin-top: 25px; display: grid; grid-template-columns: 1fr 270px; gap: 20px; align-items: start; }
+.rx-schedule-days, .rx-plan-summary { border: 1px solid #dfe8e5; border-radius: 15px; background: #fbfdfc; }
+.rx-schedule-days { padding: 19px; }
+.rx-section-title { display: flex; align-items: center; gap: 10px; }
+.rx-section-title > svg { width: 20px; height: 20px; color: #197c78; }
+.rx-section-title span { display: grid; gap: 2px; color: #819494; font-size: 8px; }
+.rx-section-title strong { color: #345657; font-size: 11px; }
+.rx-day { margin-top: 15px; display: grid; grid-template-columns: 130px 1fr; gap: 15px; }
+.rx-day-date { padding: 11px; display: grid; align-content: start; gap: 4px; border-radius: 10px; background: #edf6f3; }
+.rx-day-date strong { text-transform: capitalize; font-size: 10px; }
+.rx-day-date span { color: #79908e; font-size: 8px; }
+.rx-day-visits { display: grid; gap: 7px; }
+.rx-visit { min-height: 50px; padding: 9px 12px; display: grid; grid-template-columns: 105px 1fr auto; align-items: center; gap: 10px; border: 1px solid #e2ebe8; border-radius: 10px; background: white; }
+.rx-visit > span { display: inline-flex; align-items: center; gap: 5px; color: #287b77; font-size: 8px; font-weight: 850; }
+.rx-visit svg { width: 13px; height: 13px; }
+.rx-visit strong { font-size: 9px; }
+.rx-visit small { color: #7f9293; font-size: 8px; }
+.rx-more-days { margin-top: 14px; padding: 11px; border-radius: 9px; color: #567777; background: #edf6f3; font-size: 9px; font-weight: 800; text-align: center; }
+.rx-plan-summary { padding: 20px; }
+.rx-plan-summary h3 { margin: 8px 0 17px; font-size: 18px; }
+.rx-plan-summary ul { margin: 0; padding: 0; display: grid; gap: 12px; list-style: none; }
+.rx-plan-summary li { display: flex; gap: 8px; align-items: center; color: #587273; font-size: 9px; }
+.rx-plan-summary li svg { width: 15px; height: 15px; color: #168179; }
+.rx-warning { margin-top: 22px; padding: 12px; display: flex; gap: 9px; align-items: center; border-radius: 10px; color: #8a681e; background: #fff5db; }
+.rx-warning svg { flex: 0 0 auto; width: 16px; height: 16px; }
+.rx-warning span { display: grid; gap: 2px; color: #857554; font-size: 8px; }
+.rx-warning strong { color: #765b1b; font-size: 9px; }
+.rx-schedule-actions { margin-top: 20px; padding-top: 19px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e3ebe9; }
+.rx-complete { max-width: 760px; margin: 0 auto; padding: 50px; text-align: center; }
+.rx-complete-icon { width: 64px; height: 64px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 21px; color: white; background: #0c8581; box-shadow: 0 12px 25px rgba(12,133,129,.2); }
+.rx-complete-icon svg { width: 31px; height: 31px; }
+.rx-complete h2 { margin: 9px 0 12px; font-size: 32px; }
+.rx-complete > p { max-width: 560px; margin: 0 auto; color: #6b8283; font-size: 12px; }
+.rx-complete-flow { margin: 32px 0; display: flex; align-items: center; justify-content: center; }
+.rx-complete-flow > span { padding: 10px 12px; display: inline-flex; align-items: center; gap: 7px; border-radius: 10px; color: #3e6e6b; background: #eaf6f2; font-size: 9px; font-weight: 800; }
+.rx-complete-flow svg { width: 14px; height: 14px; }
+.rx-complete-flow i { width: 35px; height: 1px; background: #bfdad4; }
+.rx-complete-actions { display: flex; justify-content: center; gap: 10px; }
+
+@media (max-width: 900px) {
+  .rx-heading { align-items: start; }
+  .rx-review-grid { grid-template-columns: 1fr; }
+  .rx-document-column { max-width: 560px; width: 100%; margin: 0 auto; }
+  .rx-schedule-hero { display: block; }
+  .rx-metrics { margin-top: 18px; }
+  .rx-schedule-content { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .rx-topbar { height: 60px; padding: 0 14px; grid-template-columns: 1fr auto; }
+  .rx-demo-badge { display: none; }
+  .rx-workspace { width: min(100% - 28px,560px); padding: 28px 0 44px; }
+  .rx-heading { display: block; }
+  .rx-heading h1 { font-size: 39px; }
+  .rx-safety { max-width: none; margin-top: 18px; }
+  .rx-steps li { min-height: 58px; padding: 0 8px; justify-content: center; text-align: center; }
+  .rx-steps li > span { display: none; }
+  .rx-steps li strong { font-size: 8px; }
+  .rx-document-column { padding: 10px; }
+  .rx-document { min-height: 520px; padding: 28px 23px; }
+  .rx-review-panel, .rx-schedule-panel { padding: 18px; }
+  .rx-panel-heading { display: block; }
+  .rx-ai-pill { margin-top: 12px; }
+  .rx-review-item { grid-template-columns: 29px 1fr; }
+  .rx-confidence { grid-column: 2; justify-self: start; display: flex; }
+  .rx-review-footer { display: grid; }
+  .rx-primary-button, .rx-secondary-button { min-height: 56px; width: 100%; }
+  .rx-metrics { display: grid; grid-template-columns: repeat(3,1fr); }
+  .rx-metrics > span { min-width: 0; }
+  .rx-day { grid-template-columns: 1fr; }
+  .rx-day-visits { padding-left: 8px; }
+  .rx-visit { grid-template-columns: 1fr; }
+  .rx-schedule-actions { display: grid; gap: 10px; }
+  .rx-complete { padding: 35px 18px; }
+  .rx-complete-flow { align-items: stretch; flex-direction: column; }
+  .rx-complete-flow i { width: 1px; height: 15px; margin: 0 auto; }
+  .rx-complete-actions { display: grid; }
+}

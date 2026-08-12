@@ -7,4 +7,5 @@ export * from "./server.js";
 export * from "./services/patient-service.js";
 export * from "./services/privacy-service.js";
 export * from "./services/transmission-service.js";
+export * from "./services/care-plan-service.js";
 export * from "./services/drizzle-repositories.js";

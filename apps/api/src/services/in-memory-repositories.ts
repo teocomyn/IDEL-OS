@@ -1,5 +1,6 @@
 import type { AuditSink, PatientRepository, StoredPatient } from "./patient-service.js";
 import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
+import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
 
 export class InMemoryPatientRepository implements PatientRepository {
   private readonly patients = new Map<string, StoredPatient>();
@@ -46,5 +47,23 @@ export class InMemoryTransmissionRepository implements TransmissionRepository {
 
   public async update(transmission: StoredTransmission): Promise<void> {
     this.transmissions.set(`${transmission.organizationId}:${transmission.id}`, structuredClone(transmission));
+  }
+}
+
+export class InMemoryCarePlanRepository implements CarePlanRepository {
+  public readonly plans: StoredCarePlanActivation[] = [];
+  public readonly validatedPrescriptions = new Set<string>();
+
+  public async isValidatedPrescription(
+    organizationId: string,
+    prescriptionId: string,
+    patientId: string,
+  ): Promise<boolean> {
+    return Promise.resolve(this.validatedPrescriptions.has(`${organizationId}:${prescriptionId}:${patientId}`));
+  }
+
+  public async activate(plan: StoredCarePlanActivation): Promise<void> {
+    this.plans.push(structuredClone(plan));
+    return Promise.resolve();
   }
 }
