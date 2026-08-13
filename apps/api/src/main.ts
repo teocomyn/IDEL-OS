@@ -1,6 +1,7 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import { createDatabase, EncryptionService, LocalKeyProvider } from "@idel-os/db";
+import { OsrmHttpClient, VroomHttpClient } from "@idel-os/routing";
 
 import { BetterAuthProvider } from "./auth/better-auth-provider.js";
 import { createBetterAuth } from "./auth/better-auth.js";
@@ -24,6 +25,11 @@ import { VisitService } from "./services/visit-service.js";
 import { PrescriptionService } from "./services/prescription-service.js";
 import { FieldService } from "./services/field-service.js";
 import { DeviceService } from "./services/device-service.js";
+import { OptimizationService } from "./services/optimization-service.js";
+import { DrizzleOptimizationRepository } from "./services/optimization-repository.js";
+import { CockpitService } from "./services/cockpit-service.js";
+import { CabinetService } from "./services/cabinet-service.js";
+import { DrizzleCabinetRepository, DrizzleCockpitRepository } from "./services/cabinet-repositories.js";
 
 const environment = parseEnvironment(process.env);
 const { db } = createDatabase(environment.DATABASE_URL);
@@ -37,6 +43,8 @@ const masterKey =
 const patientRepository = new DrizzlePatientRepository(db);
 const auditSink = new DrizzleAuditSink(db);
 const encryptionService = new EncryptionService(new LocalKeyProvider(masterKey));
+const cockpitRepository = new DrizzleCockpitRepository(db, encryptionService);
+const cabinetRepository = new DrizzleCabinetRepository(db, encryptionService);
 const patientService = new PatientService(
   patientRepository,
   auditSink,
@@ -91,6 +99,14 @@ const server = createServer({
       () => new Date(),
       (userId) => authProvider.revokeUserSessions(userId),
     ),
+    optimizationService: new OptimizationService(
+      new DrizzleOptimizationRepository(db),
+      new OsrmHttpClient(environment.OSRM_URL),
+      new VroomHttpClient(environment.VROOM_URL),
+      randomUUID,
+    ),
+    cockpitService: new CockpitService(cockpitRepository, auditSink, encryptionService),
+    cabinetService: new CabinetService(cabinetRepository, auditSink),
   },
 });
 

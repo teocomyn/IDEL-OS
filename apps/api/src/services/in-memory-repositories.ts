@@ -1,5 +1,10 @@
 import type { AuditSink, PatientRepository, StoredPatient } from "./patient-service.js";
-import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
+import type {
+  StoredTransmission,
+  StoredTransmissionReceipt,
+  TransmissionRepository,
+} from "./transmission-service.js";
+import type { StructuredTransmission } from "@idel-os/shared";
 import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
 import type { StoredVisitLifecycle, VisitLifecycleRepository } from "./visit-service.js";
 import type { PrescriptionRepository, StoredPrescription } from "./prescription-service.js";
@@ -33,6 +38,11 @@ export class InMemoryAuditSink implements AuditSink {
 
 export class InMemoryTransmissionRepository implements TransmissionRepository {
   private readonly transmissions = new Map<string, StoredTransmission>();
+  private readonly receipts = new Map<string, StoredTransmissionReceipt>();
+  public readonly validatedVitals: Array<{
+    transmissionId: string;
+    structured: StructuredTransmission;
+  }> = [];
 
   public async create(transmission: StoredTransmission): Promise<void> {
     this.transmissions.set(`${transmission.organizationId}:${transmission.id}`, structuredClone(transmission));
@@ -49,9 +59,45 @@ export class InMemoryTransmissionRepository implements TransmissionRepository {
       .map((transmission) => structuredClone(transmission));
   }
 
-  public async update(transmission: StoredTransmission): Promise<void> {
-    this.transmissions.set(`${transmission.organizationId}:${transmission.id}`, structuredClone(transmission));
+  public async listValidatedForDate(
+    organizationId: string,
+    assignedUserId: string,
+    date: string,
+  ): Promise<StoredTransmission[]> {
+    return [...this.transmissions.values()]
+      .filter((transmission) =>
+        transmission.organizationId === organizationId
+        && transmission.status === "validated"
+        && transmission.createdAt.toISOString().slice(0, 10) === date
+        && transmission.authorUserId !== assignedUserId,
+      )
+      .map((transmission) => structuredClone(transmission));
   }
+
+  public async validateAndSaveVitals(
+    transmission: StoredTransmission,
+    structured: StructuredTransmission,
+  ): Promise<void> {
+    this.transmissions.set(`${transmission.organizationId}:${transmission.id}`, structuredClone(transmission));
+    this.validatedVitals.push({ transmissionId: transmission.id, structured: structuredClone(structured) });
+  }
+
+  public async upsertReceipt(receipt: StoredTransmissionReceipt): Promise<void> {
+    this.receipts.set(receiptKey(receipt.organizationId, receipt.transmissionId, receipt.userId), structuredClone(receipt));
+  }
+
+  public async findReceipt(
+    organizationId: string,
+    transmissionId: string,
+    userId: string,
+  ): Promise<StoredTransmissionReceipt | null> {
+    const receipt = this.receipts.get(receiptKey(organizationId, transmissionId, userId));
+    return receipt === undefined ? null : structuredClone(receipt);
+  }
+}
+
+function receiptKey(organizationId: string, transmissionId: string, userId: string): string {
+  return `${organizationId}:${transmissionId}:${userId}`;
 }
 
 export class InMemoryCarePlanRepository implements CarePlanRepository {

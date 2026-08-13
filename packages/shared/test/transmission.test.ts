@@ -7,7 +7,14 @@ describe("structuredTransmissionSchema", () => {
     const parsed = structuredTransmissionSchema.parse({
       actsPerformed: [{ label: "Pansement synthétique", conformToProtocol: true }],
       observations: [{ text: "Rougeur fictive observée", source: "observed" }],
-      vitals: [{ type: "eva", value: 3, value2: null, unit: "/10" }],
+      vitals: [{
+        type: "eva",
+        value: 3,
+        value2: null,
+        unit: "/10",
+        source: "observed",
+        measuredAt: "2026-08-13T08:00:00.000Z",
+      }],
       concerns: [{ text: "À surveiller au prochain passage", urgency: "a_surveiller" }],
       nextVisitNotes: "Prévoir le matériel synthétique.",
       missingInfo: [],

@@ -16,6 +16,7 @@ export const tours = pgTable("tours", {
   actualDistanceM: integer("actual_distance_m"),
   actualDurationS: integer("actual_duration_s"),
   optimizationRunId: uuid("optimization_run_id"),
+  constraintsJson: jsonb("constraints_json").notNull().default({}),
 });
 
 export const optimizationRuns = pgTable("optimization_runs", {
@@ -26,6 +27,9 @@ export const optimizationRuns = pgTable("optimization_runs", {
   paramsJson: jsonb("params_json").notNull(),
   beforeMetrics: jsonb("before_metrics").notNull(),
   afterMetrics: jsonb("after_metrics").notNull(),
+  proposalJson: jsonb("proposal_json").notNull().default({}),
   accepted: boolean("accepted").default(false).notNull(),
+  acceptedByUserId: uuid("accepted_by_user_id").references(() => users.id),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

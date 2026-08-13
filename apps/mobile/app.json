@@ -17,9 +17,31 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-sqlite", { "useSQLCipher": true }],
-      ["expo-secure-store", { "faceIDPermission": "IDEL OS utilise Face ID pour déverrouiller votre tournée." }],
-      ["expo-local-authentication", { "faceIDPermission": "IDEL OS utilise Face ID pour déverrouiller votre tournée." }]
+      [
+        "expo-sqlite",
+        {
+          "useSQLCipher": true
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "IDEL OS utilise Face ID pour déverrouiller votre tournée."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "IDEL OS utilise Face ID pour déverrouiller votre tournée."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "IDEL OS utilise le microphone pour dicter une transmission pendant le passage.",
+          "speechRecognitionPermission": "IDEL OS transcrit localement votre transmission lorsque l’appareil le permet."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

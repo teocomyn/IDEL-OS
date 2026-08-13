@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS "transmission_receipts";
+ALTER TABLE "optimization_runs" DROP COLUMN IF EXISTS "accepted_at";
+ALTER TABLE "optimization_runs" DROP COLUMN IF EXISTS "accepted_by_user_id";
+ALTER TABLE "optimization_runs" DROP COLUMN IF EXISTS "proposal_json";
+ALTER TABLE "tours" DROP COLUMN IF EXISTS "constraints_json";
+ALTER TABLE "visits" DROP COLUMN IF EXISTS "routing_constraints_json";
+ALTER TABLE "visits" DROP COLUMN IF EXISTS "preferred_user_id";
+ALTER TABLE "visits" DROP COLUMN IF EXISTS "hard_time_window";
+ALTER TABLE "transmissions" DROP COLUMN IF EXISTS "created_at";
+ALTER TABLE "transmissions" DROP COLUMN IF EXISTS "validated_by_user_id";
+ALTER TABLE "transmissions" DROP COLUMN IF EXISTS "transcription_mode";

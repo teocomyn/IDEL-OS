@@ -9,5 +9,8 @@ export * from "./schemas/prescriber.js";
 export * from "./schemas/prescription.js";
 export * from "./schemas/privacy.js";
 export * from "./schemas/transmission.js";
+export * from "./transmission-structure.js";
 export * from "./schemas/care-plan.js";
 export * from "./schemas/visit.js";
+export * from "./schemas/routing.js";
+export * from "./schemas/cabinet.js";

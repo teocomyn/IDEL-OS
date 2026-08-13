@@ -81,6 +81,9 @@ export const visits = pgTable(
     geoCheckout: point("geo_checkout", { mode: "xy" }),
     tourId: uuid("tour_id"),
     positionInTour: integer("position_in_tour"),
+    hardTimeWindow: boolean("hard_time_window").default(false).notNull(),
+    preferredUserId: uuid("preferred_user_id").references(() => users.id),
+    routingConstraintsJson: jsonb("routing_constraints_json").notNull().default({}),
   },
   (table) => [index("visits_org_scheduled_idx").on(table.orgId, table.scheduledAt)],
 );

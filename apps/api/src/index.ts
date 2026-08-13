@@ -7,6 +7,8 @@ export * from "./server.js";
 export * from "./services/patient-service.js";
 export * from "./services/privacy-service.js";
 export * from "./services/transmission-service.js";
+export * from "./services/optimization-service.js";
+export * from "./services/mssante-adapter.js";
 export * from "./services/care-plan-service.js";
 export * from "./services/visit-service.js";
 export * from "./services/drizzle-repositories.js";

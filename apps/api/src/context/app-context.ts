@@ -7,6 +7,9 @@ import type { VisitService } from "../services/visit-service.js";
 import type { PrescriptionService } from "../services/prescription-service.js";
 import type { FieldService } from "../services/field-service.js";
 import type { DeviceService } from "../services/device-service.js";
+import type { OptimizationService } from "../services/optimization-service.js";
+import type { CockpitService } from "../services/cockpit-service.js";
+import type { CabinetService } from "../services/cabinet-service.js";
 
 export type AppContext = {
   professional: AuthenticatedProfessional | null;
@@ -18,4 +21,7 @@ export type AppContext = {
   prescriptionService: PrescriptionService;
   fieldService: FieldService;
   deviceService: DeviceService;
+  optimizationService: OptimizationService;
+  cockpitService: CockpitService;
+  cabinetService: CabinetService;
 };

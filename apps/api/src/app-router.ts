@@ -6,7 +6,10 @@ import {
   patientPatchSchema,
   privacyRequestSchema,
   transmissionDraftInputSchema,
+  transmissionHandoverInputSchema,
+  transmissionReceiptInputSchema,
   transmissionReferenceSchema,
+  transmissionTourSummaryInputSchema,
   carePlanActivationInputSchema,
   visitActCompletionSchema,
   visitReferenceSchema,
@@ -17,6 +20,18 @@ import {
   visitExceptionInputSchema,
   mobileDeviceRegistrationSchema,
   mobileDeviceReferenceSchema,
+  routingApplyInputSchema,
+  routingProposalInputSchema,
+  adminTaskDecisionSchema,
+  cabinetDateRangeSchema,
+  cockpitListInputSchema,
+  messageDraftCreateSchema,
+  messageDraftReferenceSchema,
+  patientAccessGrantSchema,
+  replacementContractInputSchema,
+  visitReassignmentApplySchema,
+  visitReassignmentPreviewSchema,
+  retrocessionPreparationSchema,
 } from "@idel-os/shared";
 
 import type { AppContext } from "./context/app-context.js";
@@ -82,8 +97,26 @@ const transmissionRouter = t.router({
   listByPatient: protectedProcedure
     .input(z.object({ patientId: z.uuid() }))
     .query(({ ctx, input }) =>
-      ctx.transmissionService.listByPatient(ctx.professional.organizationId, input.patientId),
+      ctx.transmissionService.listByPatient(
+        ctx.professional.organizationId,
+        input.patientId,
+        ctx.professional.userId,
+      ),
     ),
+  sinceMyLastPassage: protectedProcedure
+    .input(transmissionHandoverInputSchema)
+    .query(({ ctx, input }) => ctx.transmissionService.sinceMyLastPassage(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.patientId,
+    )),
+  tourSummary: protectedProcedure
+    .input(transmissionTourSummaryInputSchema)
+    .query(({ ctx, input }) => ctx.transmissionService.tourSummary(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.date,
+    )),
   createDraft: protectedProcedure
     .input(transmissionDraftInputSchema)
     .mutation(({ ctx, input }) =>
@@ -102,6 +135,13 @@ const transmissionRouter = t.router({
         transmissionId: input.transmissionId,
       }),
     ),
+  receipt: protectedProcedure
+    .input(transmissionReceiptInputSchema)
+    .mutation(({ ctx, input }) => ctx.transmissionService.receipt({
+      organizationId: ctx.professional.organizationId,
+      actor: { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    })),
 });
 
 const carePlanRouter = t.router({
@@ -213,6 +253,119 @@ const deviceRouter = t.router({
   ),
 });
 
+const optimizationRouter = t.router({
+  propose: protectedProcedure.input(routingProposalInputSchema).mutation(({ ctx, input }) =>
+    ctx.optimizationService.propose(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  getProposal: protectedProcedure.input(routingApplyInputSchema).query(({ ctx, input }) =>
+    ctx.optimizationService.getProposal(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.optimizationRunId,
+    ),
+  ),
+  apply: protectedProcedure.input(routingApplyInputSchema).mutation(({ ctx, input }) =>
+    ctx.optimizationService.apply(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.optimizationRunId,
+    ),
+  ),
+});
+
+const cockpitRouter = t.router({
+  list: protectedProcedure.input(cockpitListInputSchema).query(({ ctx, input }) =>
+    ctx.cockpitService.list(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  decideTask: protectedProcedure.input(adminTaskDecisionSchema).mutation(({ ctx, input }) =>
+    ctx.cockpitService.decideTask(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  createMessageDraft: protectedProcedure.input(messageDraftCreateSchema).mutation(({ ctx, input }) =>
+    ctx.cockpitService.createMessageDraft(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  validateMessageDraft: protectedProcedure.input(messageDraftReferenceSchema).mutation(({ ctx, input }) =>
+    ctx.cockpitService.validateMessageDraft(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.draftId,
+    ),
+  ),
+  deliveryPayload: protectedProcedure.input(messageDraftReferenceSchema).query(({ ctx, input }) =>
+    ctx.cockpitService.getValidatedMessageForDelivery(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.draftId,
+    ),
+  ),
+  messageDrafts: protectedProcedure.query(({ ctx }) =>
+    ctx.cockpitService.listMessageDrafts(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+    ),
+  ),
+});
+
+const cabinetRouter = t.router({
+  dashboard: protectedProcedure.input(cabinetDateRangeSchema).query(({ ctx, input }) =>
+    ctx.cabinetService.dashboard(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  grantPatientAccess: protectedProcedure.input(patientAccessGrantSchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.grantPatientAccess(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  createReplacementContract: protectedProcedure.input(replacementContractInputSchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.createReplacementContract(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  prepareRetrocession: protectedProcedure.input(retrocessionPreparationSchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.prepareRetrocession(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  previewReassignment: protectedProcedure.input(visitReassignmentPreviewSchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.previewReassignment(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  applyReassignment: protectedProcedure.input(visitReassignmentApplySchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.applyReassignment(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.changeId,
+    ),
+  ),
+});
+
 export const appRouter = t.router({
   patient: patientRouter,
   privacy: privacyRouter,
@@ -222,5 +375,8 @@ export const appRouter = t.router({
   prescription: prescriptionRouter,
   field: fieldRouter,
   device: deviceRouter,
+  optimization: optimizationRouter,
+  cockpit: cockpitRouter,
+  cabinet: cabinetRouter,
 });
 export type AppRouter = typeof appRouter;

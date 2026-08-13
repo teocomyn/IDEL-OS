@@ -53,6 +53,302 @@ export type RouteOptimizationProposal = {
   durationGainS: number;
 };
 
+export type GeoCoordinate = { longitude: number; latitude: number };
+export type FieldNurse = {
+  id: string;
+  start: GeoCoordinate;
+  end: GeoCoordinate;
+  shift: [number, number];
+  skills: number[];
+  maxVisits: number;
+  breaks: Array<{ id: string; durationS: number; timeWindows: Array<[number, number]> }>;
+};
+export type FieldRoutingStop = {
+  id: string;
+  patientId: string | null;
+  coordinate: GeoCoordinate;
+  serviceDurationS: number;
+  timeWindows: Array<[number, number]>;
+  priority: number;
+  requiredSkills: number[];
+  preferredNurseId: string | null;
+  continuityNurseId: string | null;
+  lockedNurseId: string | null;
+  lockedPosition: number | null;
+  kind: "patient" | "laboratory" | "cabinet";
+};
+export type FieldRoutingPlan = {
+  nurses: FieldNurse[];
+  stops: FieldRoutingStop[];
+  currentAssignments: Array<{ nurseId: string; stopIds: string[]; durationS?: number; distanceM?: number }>;
+};
+export type FieldRoutingSolution = {
+  assignments: Array<{ nurseId: string; stopIds: string[]; durationS: number; distanceM: number }>;
+  unassignedStopIds: string[];
+  metrics: { durationS: number; distanceM: number; continuityBreaks: number; loadImbalance: number };
+};
+export type FieldRoutingDiff = {
+  moved: Array<{ stopId: string; fromNurseId: string | null; toNurseId: string; fromPosition: number | null; toPosition: number }>;
+  before: FieldRoutingSolution["metrics"];
+  after: FieldRoutingSolution["metrics"];
+  gains: { durationS: number; distanceM: number };
+};
+
+export interface RoadMatrixProvider {
+  table(coordinates: GeoCoordinate[]): Promise<{ durations: number[][]; distances: number[][] }>;
+}
+
+export interface VehicleOptimizer {
+  solve(plan: FieldRoutingPlan, matrix: { durations: number[][]; distances: number[][] }): Promise<FieldRoutingSolution>;
+}
+
+export class OsrmHttpClient implements RoadMatrixProvider {
+  public constructor(
+    private readonly baseUrl: string,
+    private readonly request: typeof fetch = fetch,
+  ) {}
+
+  public async table(coordinates: GeoCoordinate[]): Promise<{ durations: number[][]; distances: number[][] }> {
+    if (coordinates.length === 0) return { durations: [], distances: [] };
+    const serialized = coordinates.map(({ longitude, latitude }) => `${longitude},${latitude}`).join(";");
+    const response = await this.request(`${this.baseUrl.replace(/\/$/, "")}/table/v1/driving/${serialized}?annotations=duration,distance`);
+    if (!response.ok) throw new Error(`OSRM indisponible (${response.status}).`);
+    const body = await response.json() as { code?: string; durations?: Array<Array<number | null>>; distances?: Array<Array<number | null>> };
+    if (body.code !== "Ok" || body.durations === undefined || body.distances === undefined) throw new Error("Matrice OSRM invalide.");
+    return {
+      durations: completeMatrix(body.durations, "durée"),
+      distances: completeMatrix(body.distances, "distance"),
+    };
+  }
+}
+
+export class VroomHttpClient implements VehicleOptimizer {
+  public constructor(
+    private readonly baseUrl: string,
+    private readonly request: typeof fetch = fetch,
+  ) {}
+
+  public async solve(plan: FieldRoutingPlan, matrix: { durations: number[][]; distances: number[][] }): Promise<FieldRoutingSolution> {
+    const locations = collectRoutingLocations(plan);
+    const locationIndex = new Map(locations.map((coordinate, index) => [coordinateKey(coordinate), index]));
+    const nurseIndex = new Map(plan.nurses.map((nurse, index) => [index + 1, nurse.id]));
+    const stopByNumericId = new Map(plan.stops.map((stop, index) => [index + 1, stop]));
+    const payload = {
+      jobs: plan.stops.map((stop, index) => ({
+        id: index + 1,
+        location_index: locationIndex.get(coordinateKey(stop.coordinate)),
+        service: stop.serviceDurationS,
+        delivery: [1],
+        priority: stop.priority,
+        skills: [
+          ...stop.requiredSkills,
+          ...affinitySkills(plan, stop),
+        ],
+        ...(stop.timeWindows.length === 0 ? {} : { time_windows: stop.timeWindows }),
+      })),
+      vehicles: plan.nurses.map((nurse, index) => ({
+        id: index + 1,
+        start_index: locationIndex.get(coordinateKey(nurse.start)),
+        end_index: locationIndex.get(coordinateKey(nurse.end)),
+        time_window: nurse.shift,
+        capacity: [nurse.maxVisits],
+        skills: [...nurse.skills, nurseAffinitySkill(plan, nurse.id)],
+        breaks: nurse.breaks.map((item, breakIndex) => ({ id: breakIndex + 1, service: item.durationS, time_windows: item.timeWindows })),
+      })),
+      matrices: { car: { durations: matrix.durations, distances: matrix.distances } },
+    };
+    const response = await this.request(this.baseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error(`VROOM indisponible (${response.status}).`);
+    const body = await response.json() as VroomResponse;
+    if (body.code !== 0) throw new Error(`VROOM a refusé le problème (${body.error ?? body.code}).`);
+    const assignments = body.routes.map((route) => ({
+      nurseId: nurseIndex.get(route.vehicle) ?? `unknown:${route.vehicle}`,
+      stopIds: route.steps.filter((step) => step.type === "job").map((step) => stopByNumericId.get(step.id)?.id).filter(isString),
+      durationS: route.duration,
+      distanceM: route.distance,
+    }));
+    assertLockedAssignments(plan, assignments);
+    return {
+      assignments,
+      unassignedStopIds: body.unassigned.map(({ id }) => stopByNumericId.get(id)?.id).filter(isString),
+      metrics: calculateSolutionMetrics(plan, assignments),
+    };
+  }
+}
+
+export function collectRoutingLocations(plan: FieldRoutingPlan): GeoCoordinate[] {
+  const locations: GeoCoordinate[] = [];
+  const seen = new Set<string>();
+  for (const coordinate of [
+    ...plan.nurses.flatMap(({ start, end }) => [start, end]),
+    ...plan.stops.map(({ coordinate }) => coordinate),
+  ]) {
+    const key = coordinateKey(coordinate);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    locations.push(coordinate);
+  }
+  return locations;
+}
+
+/** Recalcule l'état initial avec la même matrice routière que la proposition. */
+export function withRoadMetrics(
+  plan: FieldRoutingPlan,
+  matrix: { durations: number[][]; distances: number[][] },
+): FieldRoutingPlan {
+  const locations = collectRoutingLocations(plan);
+  const locationIndex = new Map(locations.map((coordinate, index) => [coordinateKey(coordinate), index]));
+  const stopById = new Map(plan.stops.map((stop) => [stop.id, stop]));
+  return {
+    ...plan,
+    currentAssignments: plan.currentAssignments.map((assignment) => {
+      const nurse = plan.nurses.find(({ id }) => id === assignment.nurseId);
+      if (nurse === undefined) throw new Error(`IDEL affectée inconnue : ${assignment.nurseId}.`);
+      const route = [
+        nurse.start,
+        ...assignment.stopIds.map((stopId) => {
+          const stop = stopById.get(stopId);
+          if (stop === undefined) throw new Error(`Passage affecté inconnu : ${stopId}.`);
+          return stop.coordinate;
+        }),
+        nurse.end,
+      ];
+      let durationS = 0;
+      let distanceM = 0;
+      for (let index = 1; index < route.length; index += 1) {
+        const from = locationIndex.get(coordinateKey(route[index - 1]!));
+        const to = locationIndex.get(coordinateKey(route[index]!));
+        if (from === undefined || to === undefined) throw new Error("Coordonnée absente de la matrice routière.");
+        durationS += matrixValue(matrix.durations, from, to, "durée");
+        distanceM += matrixValue(matrix.distances, from, to, "distance");
+      }
+      return { ...assignment, durationS, distanceM };
+    }),
+  };
+}
+
+function matrixValue(matrix: number[][], from: number, to: number, label: string): number {
+  const value = matrix[from]?.[to];
+  if (value === undefined || !Number.isFinite(value)) {
+    throw new Error(`Matrice de ${label} incomplète entre ${from} et ${to}.`);
+  }
+  return value;
+}
+
+function assertLockedAssignments(
+  plan: FieldRoutingPlan,
+  assignments: Array<{ nurseId: string; stopIds: string[] }>,
+): void {
+  const proposed = assignmentIndex(assignments);
+  for (const stop of plan.stops) {
+    const assigned = proposed.get(stop.id);
+    if (stop.lockedNurseId !== null && assigned?.nurseId !== stop.lockedNurseId) {
+      throw new Error(`VROOM a déplacé le passage verrouillé ${stop.id} vers une autre IDEL.`);
+    }
+    if (stop.lockedPosition !== null && assigned?.position !== stop.lockedPosition) {
+      throw new Error(`VROOM a déplacé le passage verrouillé ${stop.id} dans la tournée.`);
+    }
+  }
+}
+
+function completeMatrix(matrix: Array<Array<number | null>>, label: string): number[][] {
+  return matrix.map((row, rowIndex) => row.map((value, columnIndex) => {
+    if (value === null || !Number.isFinite(value)) throw new Error(`OSRM ne trouve aucune ${label} entre les points ${rowIndex + 1} et ${columnIndex + 1}.`);
+    return Math.ceil(value);
+  }));
+}
+
+function coordinateKey({ longitude, latitude }: GeoCoordinate): string {
+  return `${longitude.toFixed(7)},${latitude.toFixed(7)}`;
+}
+
+function nurseAffinitySkill(plan: FieldRoutingPlan, nurseId: string): number {
+  const index = plan.nurses.findIndex(({ id }) => id === nurseId);
+  if (index < 0) throw new Error(`IDEL verrouillée inconnue : ${nurseId}.`);
+  return 1_000_000 + index;
+}
+
+function affinitySkills(plan: FieldRoutingPlan, stop: FieldRoutingStop): number[] {
+  const nurseId = stop.lockedNurseId ?? stop.continuityNurseId;
+  return nurseId === null ? [] : [nurseAffinitySkill(plan, nurseId)];
+}
+
+function assignmentIndex(assignments: Array<{ nurseId: string; stopIds: string[] }>): Map<string, { nurseId: string; position: number }> {
+  const result = new Map<string, { nurseId: string; position: number }>();
+  for (const assignment of assignments) {
+    assignment.stopIds.forEach((stopId, position) => result.set(stopId, { nurseId: assignment.nurseId, position }));
+  }
+  return result;
+}
+
+function calculateCurrentMetrics(plan: FieldRoutingPlan): FieldRoutingSolution["metrics"] {
+  const assignments = plan.currentAssignments.map((assignment) => ({
+    ...assignment,
+    durationS: assignment.durationS ?? 0,
+    distanceM: assignment.distanceM ?? 0,
+  }));
+  return calculateSolutionMetrics(plan, assignments);
+}
+
+function calculateSolutionMetrics(
+  plan: FieldRoutingPlan,
+  assignments: Array<{ nurseId: string; stopIds: string[]; durationS: number; distanceM: number }>,
+): FieldRoutingSolution["metrics"] {
+  const assignmentByStop = assignmentIndex(assignments);
+  const continuityBreaks = plan.stops.filter((stop) => {
+    const assigned = assignmentByStop.get(stop.id)?.nurseId;
+    const expected = stop.continuityNurseId ?? stop.preferredNurseId;
+    return expected !== null && assigned !== undefined && assigned !== expected;
+  }).length;
+  const loads = plan.nurses.map(({ id }) => assignments.find(({ nurseId }) => nurseId === id)?.stopIds.length ?? 0);
+  const loadImbalance = loads.length === 0 ? 0 : Math.max(...loads) - Math.min(...loads);
+  return {
+    durationS: assignments.reduce((sum, route) => sum + route.durationS, 0),
+    distanceM: assignments.reduce((sum, route) => sum + route.distanceM, 0),
+    continuityBreaks,
+    loadImbalance,
+  };
+}
+
+function isString(value: string | undefined): value is string {
+  return value !== undefined;
+}
+
+type VroomResponse = {
+  code: number;
+  error?: string;
+  routes: Array<{ vehicle: number; duration: number; distance: number; steps: Array<{ type: string; id: number }> }>;
+  unassigned: Array<{ id: number }>;
+};
+
+export function buildRoutingDiff(plan: FieldRoutingPlan, solution: FieldRoutingSolution): FieldRoutingDiff {
+  const current = assignmentIndex(plan.currentAssignments);
+  const proposed = assignmentIndex(solution.assignments);
+  const moved = plan.stops.flatMap((stop) => {
+    const before = current.get(stop.id) ?? null;
+    const after = proposed.get(stop.id);
+    if (after === undefined || (before?.nurseId === after.nurseId && before.position === after.position)) return [];
+    return [{
+      stopId: stop.id,
+      fromNurseId: before?.nurseId ?? null,
+      toNurseId: after.nurseId,
+      fromPosition: before?.position ?? null,
+      toPosition: after.position,
+    }];
+  });
+  const before = calculateCurrentMetrics(plan);
+  return {
+    moved,
+    before,
+    after: solution.metrics,
+    gains: { durationS: before.durationS - solution.metrics.durationS, distanceM: before.distanceM - solution.metrics.distanceM },
+  };
+}
+
 export type TimelineStop = {
   id: string;
   plannedAt: Date;

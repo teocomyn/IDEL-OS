@@ -43,6 +43,7 @@ export default function HomePage() {
           <Link href="/demo-ordonnance">Ordonnances</Link>
           <Link href="/demo-cotation">Cotation</Link>
           <Link href="/demo-transmissions">Transmissions</Link>
+          <Link href="/demo-administration">Cabinet</Link>
         </nav>
 
         <div className="home-header-actions">

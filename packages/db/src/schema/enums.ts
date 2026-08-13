@@ -19,3 +19,7 @@ export const adminTaskStatusEnum = pgEnum("admin_task_status", ["open", "snoozed
 export const documentSourceEnum = pgEnum("invoice_source", ["manual", "import_csv"]);
 export const visitExceptionTypeEnum = pgEnum("visit_exception_type", ["absence", "refusal", "hospitalization", "emergency", "reschedule"]);
 export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "paid", "rejected", "unpaid"]);
+export const messageDraftStatusEnum = pgEnum("message_draft_status", ["draft", "validated", "sent", "cancelled"]);
+export const replacementContractStatusEnum = pgEnum("replacement_contract_status", ["draft", "pending_signature", "active", "expired", "terminated"]);
+export const assignmentChangeStatusEnum = pgEnum("assignment_change_status", ["proposed", "applied", "rejected"]);
+export const retrocessionStatusEnum = pgEnum("retrocession_status", ["draft", "validated", "paid"]);

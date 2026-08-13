@@ -10,6 +10,8 @@ import {
   prescriptions,
   prescriptionItems,
   transmissions,
+  transmissionReceipts,
+  vitalSigns,
   visitActs,
   visitExceptions,
   visits,
@@ -19,7 +21,8 @@ import {
 import type { EncryptedValue } from "@idel-os/shared";
 
 import type { AuditSink, PatientRepository, StoredPatient } from "./patient-service.js";
-import type { StoredTransmission, TransmissionRepository } from "./transmission-service.js";
+import type { StoredTransmission, StoredTransmissionReceipt, TransmissionRepository } from "./transmission-service.js";
+import type { StructuredTransmission } from "@idel-os/shared";
 import type { CarePlanRepository, StoredCarePlanActivation } from "./care-plan-service.js";
 import type { StoredVisitLifecycle, VisitLifecycleRepository } from "./visit-service.js";
 import type { PrescriptionRepository, StoredPrescription } from "./prescription-service.js";
@@ -104,17 +107,81 @@ export class DrizzleTransmissionRepository implements TransmissionRepository {
       const rows = await transaction
         .select()
         .from(transmissions)
-        .where(and(eq(transmissions.orgId, organizationId), eq(transmissions.patientId, patientId)));
+        .where(and(eq(transmissions.orgId, organizationId), eq(transmissions.patientId, patientId)))
+        .orderBy(asc(transmissions.createdAt));
       return rows.map(fromDatabaseTransmission);
     });
   }
 
-  public async update(transmission: StoredTransmission): Promise<void> {
+  public async listValidatedForDate(organizationId: string, assignedUserId: string, date: string): Promise<StoredTransmission[]> {
+    const { start, end } = parisDayBounds(date);
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const rows = await transaction.select({ transmission: transmissions })
+        .from(transmissions)
+        .innerJoin(visits, and(eq(visits.orgId, organizationId), eq(visits.id, transmissions.visitId)))
+        .where(and(
+          eq(transmissions.orgId, organizationId),
+          eq(transmissions.status, "validated"),
+          gte(visits.scheduledAt, start),
+          lt(visits.scheduledAt, end),
+          or(eq(visits.assignedUserId, assignedUserId), isNull(visits.assignedUserId)),
+        ))
+        .orderBy(asc(visits.scheduledAt), asc(transmissions.createdAt));
+      return rows.map(({ transmission }) => fromDatabaseTransmission(transmission));
+    });
+  }
+
+  public async validateAndSaveVitals(transmission: StoredTransmission, structured: StructuredTransmission): Promise<void> {
     await withOrganization(this.database, transmission.organizationId, async (transaction) => {
       await transaction
         .update(transmissions)
-        .set({ status: transmission.status, validatedAt: transmission.validatedAt })
+        .set({ status: transmission.status, validatedAt: transmission.validatedAt, validatedByUserId: transmission.validatedByUserId })
         .where(and(eq(transmissions.orgId, transmission.organizationId), eq(transmissions.id, transmission.id)));
+      if (structured.vitals.length > 0) {
+        await transaction.insert(vitalSigns).values(structured.vitals.map((vital) => ({
+          orgId: transmission.organizationId,
+          patientId: transmission.patientId,
+          visitId: transmission.visitId,
+          type: vital.type,
+          value: String(vital.value),
+          value2: vital.value2 === null ? null : String(vital.value2),
+          unit: vital.unit,
+          measuredAt: new Date(vital.measuredAt),
+          source: vital.source === "reported" ? "voice_reported" : "voice_observed",
+        })));
+      }
+    });
+  }
+
+  public async upsertReceipt(receipt: StoredTransmissionReceipt): Promise<void> {
+    await withOrganization(this.database, receipt.organizationId, async (transaction) => {
+      await transaction.insert(transmissionReceipts).values({
+        orgId: receipt.organizationId,
+        transmissionId: receipt.transmissionId,
+        userId: receipt.userId,
+        readAt: receipt.readAt,
+        acknowledgedAt: receipt.acknowledgedAt,
+      }).onConflictDoUpdate({
+        target: [transmissionReceipts.transmissionId, transmissionReceipts.userId],
+        set: { readAt: receipt.readAt, acknowledgedAt: receipt.acknowledgedAt },
+      });
+    });
+  }
+
+  public async findReceipt(organizationId: string, transmissionId: string, userId: string): Promise<StoredTransmissionReceipt | null> {
+    return withOrganization(this.database, organizationId, async (transaction) => {
+      const [receipt] = await transaction.select().from(transmissionReceipts).where(and(
+        eq(transmissionReceipts.orgId, organizationId),
+        eq(transmissionReceipts.transmissionId, transmissionId),
+        eq(transmissionReceipts.userId, userId),
+      )).limit(1);
+      return receipt === undefined ? null : {
+        organizationId: receipt.orgId,
+        transmissionId: receipt.transmissionId,
+        userId: receipt.userId,
+        readAt: receipt.readAt,
+        acknowledgedAt: receipt.acknowledgedAt,
+      };
     });
   }
 }
@@ -590,11 +657,16 @@ function toDatabaseTransmission(transmission: StoredTransmission) {
     visitId: transmission.visitId,
     patientId: transmission.patientId,
     authorUserId: transmission.authorUserId,
+    audioUrl: transmission.audioObjectKey,
+    audioDurationS: transmission.audioDurationS,
+    transcriptionMode: transmission.transcriptionMode,
     rawTranscriptEnc: transmission.rawTranscriptEnc,
     structuredJsonEnc: transmission.structuredJsonEnc,
     finalTextEnc: transmission.finalTextEnc,
     status: transmission.status,
     validatedAt: transmission.validatedAt,
+    validatedByUserId: transmission.validatedByUserId,
+    createdAt: transmission.createdAt,
   };
 }
 
@@ -612,10 +684,15 @@ function fromDatabaseTransmission(transmission: typeof transmissions.$inferSelec
     visitId: transmission.visitId,
     patientId: transmission.patientId,
     authorUserId: transmission.authorUserId,
+    audioObjectKey: transmission.audioUrl,
+    audioDurationS: transmission.audioDurationS,
+    transcriptionMode: transmission.transcriptionMode === "on_device" || transmission.transcriptionMode === "hds_server" ? transmission.transcriptionMode : "manual",
     rawTranscriptEnc: transmission.rawTranscriptEnc as EncryptedValue,
     structuredJsonEnc: transmission.structuredJsonEnc as EncryptedValue,
     finalTextEnc: transmission.finalTextEnc as EncryptedValue,
     status: transmission.status,
     validatedAt: transmission.validatedAt,
+    validatedByUserId: transmission.validatedByUserId,
+    createdAt: transmission.createdAt,
   };
 }
