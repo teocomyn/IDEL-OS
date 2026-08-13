@@ -27,6 +27,9 @@ import { FieldService } from "./services/field-service.js";
 import { DeviceService } from "./services/device-service.js";
 import { OptimizationService } from "./services/optimization-service.js";
 import { DrizzleOptimizationRepository } from "./services/optimization-repository.js";
+import { CockpitService } from "./services/cockpit-service.js";
+import { CabinetService } from "./services/cabinet-service.js";
+import { DrizzleCabinetRepository, DrizzleCockpitRepository } from "./services/cabinet-repositories.js";
 
 const environment = parseEnvironment(process.env);
 const { db } = createDatabase(environment.DATABASE_URL);
@@ -40,6 +43,8 @@ const masterKey =
 const patientRepository = new DrizzlePatientRepository(db);
 const auditSink = new DrizzleAuditSink(db);
 const encryptionService = new EncryptionService(new LocalKeyProvider(masterKey));
+const cockpitRepository = new DrizzleCockpitRepository(db, encryptionService);
+const cabinetRepository = new DrizzleCabinetRepository(db, encryptionService);
 const patientService = new PatientService(
   patientRepository,
   auditSink,
@@ -100,6 +105,8 @@ const server = createServer({
       new VroomHttpClient(environment.VROOM_URL),
       randomUUID,
     ),
+    cockpitService: new CockpitService(cockpitRepository, auditSink, encryptionService),
+    cabinetService: new CabinetService(cabinetRepository, auditSink),
   },
 });
 

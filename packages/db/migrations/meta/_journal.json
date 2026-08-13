@@ -50,6 +50,13 @@
       "when": 1786546832218,
       "tag": "0006_voice_handover_routing",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786608000000,
+      "tag": "0007_admin_cabinet",
+      "breakpoints": true
     }
   ]
 }

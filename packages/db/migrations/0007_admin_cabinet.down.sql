@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS "cabinet_notifications";
+DROP TABLE IF EXISTS "retrocession_periods";
+DROP TABLE IF EXISTS "visit_assignment_changes";
+DROP TABLE IF EXISTS "message_drafts";
+DROP TABLE IF EXISTS "professional_documents";
+DROP TABLE IF EXISTS "replacement_contracts";
+DROP TABLE IF EXISTS "patient_access_grants";
+ALTER TABLE "admin_tasks" DROP COLUMN IF EXISTS "updated_at";
+ALTER TABLE "admin_tasks" DROP COLUMN IF EXISTS "created_at";
+ALTER TABLE "admin_tasks" DROP COLUMN IF EXISTS "completed_at";
+ALTER TABLE "admin_tasks" DROP COLUMN IF EXISTS "completed_by_user_id";
+ALTER TABLE "admin_tasks" DROP COLUMN IF EXISTS "snoozed_until";
+DROP TYPE IF EXISTS "retrocession_status";
+DROP TYPE IF EXISTS "assignment_change_status";
+DROP TYPE IF EXISTS "replacement_contract_status";
+DROP TYPE IF EXISTS "message_draft_status";

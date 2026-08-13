@@ -6,6 +6,7 @@ export * from "./ngap.js";
 export * from "./patients.js";
 export * from "./tours.js";
 export * from "./transmissions.js";
+export * from "./cabinet.js";
 
 export const organizationScopedTables = [
   "users",
@@ -39,6 +40,13 @@ export const organizationScopedTables = [
   "visit_exceptions",
   "mobile_devices",
   "processed_mobile_actions",
+  "patient_access_grants",
+  "replacement_contracts",
+  "professional_documents",
+  "message_drafts",
+  "visit_assignment_changes",
+  "retrocession_periods",
+  "cabinet_notifications",
 ] as const;
 
 export const encryptedColumns = [
@@ -60,4 +68,7 @@ export const encryptedColumns = [
   "raw_transcript_enc",
   "final_text_enc",
   "note_enc",
+  "recipient_enc",
+  "subject_enc",
+  "body_enc",
 ] as const;

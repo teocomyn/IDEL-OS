@@ -13,3 +13,4 @@ export * from "./transmission-structure.js";
 export * from "./schemas/care-plan.js";
 export * from "./schemas/visit.js";
 export * from "./schemas/routing.js";
+export * from "./schemas/cabinet.js";

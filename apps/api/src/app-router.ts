@@ -22,6 +22,16 @@ import {
   mobileDeviceReferenceSchema,
   routingApplyInputSchema,
   routingProposalInputSchema,
+  adminTaskDecisionSchema,
+  cabinetDateRangeSchema,
+  cockpitListInputSchema,
+  messageDraftCreateSchema,
+  messageDraftReferenceSchema,
+  patientAccessGrantSchema,
+  replacementContractInputSchema,
+  visitReassignmentApplySchema,
+  visitReassignmentPreviewSchema,
+  retrocessionPreparationSchema,
 } from "@idel-os/shared";
 
 import type { AppContext } from "./context/app-context.js";
@@ -267,6 +277,95 @@ const optimizationRouter = t.router({
   ),
 });
 
+const cockpitRouter = t.router({
+  list: protectedProcedure.input(cockpitListInputSchema).query(({ ctx, input }) =>
+    ctx.cockpitService.list(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  decideTask: protectedProcedure.input(adminTaskDecisionSchema).mutation(({ ctx, input }) =>
+    ctx.cockpitService.decideTask(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  createMessageDraft: protectedProcedure.input(messageDraftCreateSchema).mutation(({ ctx, input }) =>
+    ctx.cockpitService.createMessageDraft(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  validateMessageDraft: protectedProcedure.input(messageDraftReferenceSchema).mutation(({ ctx, input }) =>
+    ctx.cockpitService.validateMessageDraft(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.draftId,
+    ),
+  ),
+  deliveryPayload: protectedProcedure.input(messageDraftReferenceSchema).query(({ ctx, input }) =>
+    ctx.cockpitService.getValidatedMessageForDelivery(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.draftId,
+    ),
+  ),
+  messageDrafts: protectedProcedure.query(({ ctx }) =>
+    ctx.cockpitService.listMessageDrafts(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+    ),
+  ),
+});
+
+const cabinetRouter = t.router({
+  dashboard: protectedProcedure.input(cabinetDateRangeSchema).query(({ ctx, input }) =>
+    ctx.cabinetService.dashboard(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  grantPatientAccess: protectedProcedure.input(patientAccessGrantSchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.grantPatientAccess(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  createReplacementContract: protectedProcedure.input(replacementContractInputSchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.createReplacementContract(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  prepareRetrocession: protectedProcedure.input(retrocessionPreparationSchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.prepareRetrocession(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  previewReassignment: protectedProcedure.input(visitReassignmentPreviewSchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.previewReassignment(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input,
+    ),
+  ),
+  applyReassignment: protectedProcedure.input(visitReassignmentApplySchema).mutation(({ ctx, input }) =>
+    ctx.cabinetService.applyReassignment(
+      ctx.professional.organizationId,
+      { userId: ctx.professional.userId, role: ctx.professional.role },
+      input.changeId,
+    ),
+  ),
+});
+
 export const appRouter = t.router({
   patient: patientRouter,
   privacy: privacyRouter,
@@ -277,5 +376,7 @@ export const appRouter = t.router({
   field: fieldRouter,
   device: deviceRouter,
   optimization: optimizationRouter,
+  cockpit: cockpitRouter,
+  cabinet: cabinetRouter,
 });
 export type AppRouter = typeof appRouter;
